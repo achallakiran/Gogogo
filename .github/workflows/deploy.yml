@@ -31,11 +31,12 @@ jobs:
         run: npm run build
       - name: Browser smoke test (real WebAssembly and WebGL)
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 &
+          ln -s dist "${{ github.event.repository.name }}"
+          python3 -m http.server 4173 --bind 127.0.0.1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           for n in $(seq 1 40); do
-            curl -fsS http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null && break
+            curl -fsS "http://127.0.0.1:4173/${{ github.event.repository.name }}/" > /dev/null && break
             sleep 1
           done
           npm run smoke
