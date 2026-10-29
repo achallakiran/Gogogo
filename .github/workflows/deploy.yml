@@ -29,6 +29,16 @@ jobs:
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
+      - name: Browser smoke test (real WebAssembly and WebGL)
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for n in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:4173/${{ github.event.repository.name }}/ > /dev/null && break
+            sleep 1
+          done
+          npm run smoke
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

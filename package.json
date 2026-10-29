@@ -7,13 +7,15 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "node --test tests/*.test.mjs"
+    "check": "node --test tests/*.test.mjs",
+    "smoke": "node tests/browser-smoke.mjs"
   },
   "dependencies": {
     "three": "0.180.0",
-    "@dimforge/rapier3d-compat": "0.18.0"
+    "@dimforge/rapier3d-compat": "0.17.3"
   },
   "devDependencies": {
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "playwright-core": "1.55.0"
   }
 }

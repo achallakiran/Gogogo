@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import {AIRPORT,PICKUPS} from '../core/config.js';
+import {attachTerrainCollider} from './terrainCollider.js';
 
 const MAT = (color, opts={})=>new THREE.MeshStandardMaterial({color,roughness:.85,metalness:0,...opts});
 const roadMat=MAT('#334455'), roadAlt=MAT('#425469'), curbMat=MAT('#e9dcd0'), grass=MAT('#83bd8d');
@@ -35,7 +36,7 @@ function terrain(scene,physics){
   const a=g.attributes.position;
   for(let i=0;i<a.count;i++)a.setY(i,terrainHeight(a.getX(i),a.getZ(i)));
   g.computeVertexNormals();const m=new THREE.Mesh(g,grass);m.receiveShadow=true;scene.add(m);
-  if(physics){const rb=physics.createRigidBody(RAPIER.RigidBodyDesc.fixed());physics.createCollider(RAPIER.ColliderDesc.trimesh(new Float32Array(g.attributes.position.array),new Uint32Array(g.index.array)),rb);}
+  if(physics)attachTerrainCollider(physics,RAPIER,terrainHeight);
 }
 function strip(scene,orientation,center,start,end,width,material){
   const n=Math.ceil((end-start)/3),v=[],indices=[];
