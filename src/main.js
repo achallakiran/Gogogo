@@ -1,0 +1,146 @@
+import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d-compat';
+import './style.css';
+import {createWorld,terrainHeight} from './world/World.js';
+import {Vehicle} from './vehicles/Vehicle.js';
+import {Traffic} from './traffic/Traffic.js';
+import {Missions} from './missions/Missions.js';
+import {CameraManager} from './render/CameraManager.js';
+import {Input} from './core/Input.js';
+import {UI} from './ui/UI.js';
+import {Sounds} from './audio/Sounds.js';
+import {VEHICLES,DEFAULT_SAVE,loadSave,saveGame,formatMoney} from './core/config.js';
+
+class Game{
+  constructor(){
+    this.container=document.getElementById('game');this.save=loadSave();this.input=new Input();this.sounds=new Sounds();this.sounds.configure(this.save.settings);
+    this.player=null;this.missions=null;this.world=null;this.scene=null;this.renderer=null;this.cameraMode=null;this.t=0;this.accumulator=0;this.lastSave=0;this.ui=new UI(this);
+    this.tick=this.tick.bind(this);
+    window.addEventListener('resize',()=>this.resize());
+    document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.ui.screen==='playing')this.pause();});
+    window.addEventListener('keydown',event=>{
+      if(event.repeat)return;
+      if(event.code==='Escape'){
+        if(this.ui.screen==='playing')this.pause();else if(this.ui.screen==='paused')this.resume();
+        else if(['settings','garage','howto','confirm'].includes(this.ui.screen))this.ui.go(this.ui.previous,'title');
+      }
+      if(this.ui.screen==='playing'){
+        if(event.code==='KeyC')this.cycleCamera();
+        if(event.code==='KeyE')this.interact();
+        if(event.code==='KeyR')this.recover();
+        if(event.code==='KeyF')this.toggleFullscreen();
+      }
+    });
+    this.orbitPointer=null;
+    this.container.addEventListener('pointerdown',e=>{if(this.ui.screen==='playing'&&this.cameraMode.mode==='orbit')this.orbitPointer=e.clientX;});
+    window.addEventListener('pointermove',e=>{if(this.orbitPointer!==null){this.cameraMode.rotateOrbit((e.clientX-this.orbitPointer)*.009);this.orbitPointer=e.clientX;}});
+    window.addEventListener('pointerup',()=>this.orbitPointer=null);
+  }
+  async init(){
+    try{
+      await RAPIER.init();
+      this.world=new RAPIER.World({x:0,y:-9.81,z:0});this.world.timestep=1/60;
+      this.scene=new THREE.Scene();
+      this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+      this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.28;
+      this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+      this.container.appendChild(this.renderer.domElement);
+      this.camera=new THREE.PerspectiveCamera(64,1,.1,1200);
+      this.cameraMode=new CameraManager(this.camera);
+      const environment=createWorld(this.scene,this.world);this.environment=environment;this.cameraMode.occluders=environment.occluders;
+      this.missions=new Missions(this.scene);this.traffic=new Traffic(this.scene,this.world);
+      this.spawnPlayer([0,2,0],0);
+      this.applySettings();this.resize();
+      this.ui.toTitle();this.clock=new THREE.Clock();requestAnimationFrame(this.tick);
+    }catch(err){console.error(err);this.ui.root.innerHTML=`<div class="startup-error"><h2>Could not start the city</h2><p>${String(err.message||err).replaceAll('<','&lt;')}</p><button onclick="location.reload()">TRY AGAIN</button><p>Please use an up-to-date browser with WebGL and WebAssembly enabled.</p></div>`;}
+  }
+  spawnPlayer(pos=[0,2,0],heading=0){
+    if(this.player)this.player.dispose();
+    const spec=VEHICLES.find(v=>v.id===this.save.selected)||VEHICLES[0];
+    this.player=new Vehicle(this.scene,this.world,spec,this.save.colors[spec.id]||spec.color,pos,heading);
+    if(this.cameraMode)this.cameraMode.initial=true;
+  }
+  onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title')this.cameraMode.initial=true;}
+  start(newGame=false){
+    this.toggleFullscreen(true);
+    if(newGame){const settings={...this.save.settings};this.save=DEFAULT_SAVE();this.save.settings=settings;this.missions.cancel();}
+    const p=this.save.position;
+    this.spawnPlayer(this.save.hasPlayed?[p[0],Math.max(p[1],terrainHeight(p[0],p[2])+2),p[2]]:[0,2,0],this.save.heading||0);
+    this.save.hasPlayed=true;this.persist();this.cameraMode.setMode(this.save.settings.camera);
+    this.ui.go('playing','title');this.input.clear();this.sounds.play('pickup');
+  }
+  pause(){if(this.ui.screen!=='playing')return;this.persist();this.ui.go('paused','playing');}
+  resume(){this.ui.go('playing','paused');this.input.clear();this.cameraMode.initial=true;}
+  toTitle(){this.persist();this.missions.cancel();this.ui.toTitle();}
+  toggleFullscreen(force=false){
+    if(!document.fullscreenElement && (force || this.ui.screen==='playing')){
+      const elem=document.documentElement;const fn=elem.requestFullscreen||elem.webkitRequestFullscreen;
+      if(fn){try{const promise=fn.call(elem,{navigationUI:'hide'});promise?.catch(()=>{});}catch{}}
+    }else if(!force&&document.fullscreenElement){document.exitFullscreen?.().catch?.(()=>{});}
+  }
+  cycleCamera(){const mode=this.cameraMode.next();this.save.settings.camera=mode;this.persist();this.sounds.play('click');}
+  recover(){if(!this.player)return;const p=this.player.position;
+    // Nearest grid road is safe in city; preserve nearby position outside city.
+    const x=Math.abs(p[0])<250?Math.round(p[0]/60)*60:p[0];
+    const z=Math.abs(p[2])<250?Math.round(p[2]/60)*60:p[2];
+    this.player.reset([x,terrainHeight(x,z)+2,z],this.player.yaw);this.ui.toast('Car recovered. Back on the road!');
+  }
+  interact(){if(this.ui.screen!=='playing')return;
+    if(this.player.horizontalSpeed>3.5){this.ui.toast('Slow down to pick up or drop off passengers.','warn');this.sounds.play('error');return;}
+    const result=this.missions.interact(this.player.position,this.player.spec.capacity);
+    if(result.type==='picked'){this.ui.toast(`${result.mission.passengers} passenger${result.mission.passengers===1?'':'s'} aboard! Head for Skyport ✈`);this.sounds.play('pickup');}
+    else if(result.type==='completed'){
+      this.save.cash+=result.amount;this.save.earned+=result.amount;this.save.trips++;
+      this.ui.toast(`Airport trip complete! +${formatMoney(result.amount)} 🎉`);this.sounds.play('reward');this.persist();
+    }else if(result.type==='capacity'){this.ui.toast(`This group needs ${result.needed} seats. Try another vehicle.`,'warn');this.sounds.play('error');}
+    else this.ui.toast('Move closer to a passenger or airport marker.','warn');
+  }
+  buy(id){const spec=VEHICLES.find(v=>v.id===id);if(!spec||this.save.owned.includes(id)||this.save.cash<spec.price){this.sounds.play('error');return;}
+    this.save.cash-=spec.price;this.save.owned.push(id);this.save.colors[id]=spec.color;
+    if(!this.missions.active){this.save.selected=id;this.switchVehicle();}
+    this.persist();this.sounds.play('reward');
+  }
+  selectVehicle(id){if(!this.save.owned.includes(id))return;if(this.missions.active){alert('Finish or abandon your active passenger trip before switching cars.');return;}
+    this.save.selected=id;this.switchVehicle();this.persist();}
+  switchVehicle(){const p=this.player?.position||[0,2,0],angle=this.player?.yaw||0;this.spawnPlayer([p[0],Math.max(p[1],terrainHeight(p[0],p[2])+2),p[2]],angle);}
+  paint(id,color){if(!this.save.owned.includes(id)||!/^#[0-9a-f]{6}$/i.test(color))return;this.save.colors[id]=color;
+    if(this.save.selected===id)this.player.setColor(color);
+    this.persist();}
+  changeSetting(k,value){if(!(k in this.save.settings))return;this.save.settings[k]=value;
+    if(k==='camera')this.cameraMode.setMode(value);
+    this.sounds.configure(this.save.settings);this.applySettings();this.persist();}
+  applySettings(){if(!this.renderer)return;const s=this.save.settings,isMobile=matchMedia('(pointer:coarse)').matches;
+    const pixelRatio=s.quality==='low'?1:s.quality==='medium'?1.3:s.quality==='high'?2:(isMobile?1.35:1.75);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low';
+    if(this.environment?.sun)this.environment.sun.castShadow=this.renderer.shadowMap.enabled;
+    this.resize();}
+  persist(){if(!this.save)return;if(this.player&&this.ui.screen==='playing'){
+      const p=this.player.position;if(p.every(Number.isFinite)){this.save.position=p;this.save.heading=this.player.yaw;}
+    }saveGame(this.save);}
+  resize(){if(!this.camera||!this.renderer)return;const w=window.innerWidth,h=window.innerHeight;this.camera.aspect=Math.max(1,w)/Math.max(1,h);this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);}
+  tick(){requestAnimationFrame(this.tick);const dt=Math.min(this.clock.getDelta(),.05);this.t+=dt;
+    const playing=this.ui.screen==='playing',title=this.ui.screen==='title';
+    if(playing||title){
+      this.accumulator=Math.min(this.accumulator+dt,.13);
+      while(this.accumulator>=1/60){
+        if(playing)this.player.drive(this.input,1/60,this.save.settings);
+        this.traffic.update(1/60,playing?this.player:null);
+        this.world.step();this.accumulator-=1/60;
+      }
+      this.player.sync(dt);this.missions.update(this.t);
+    }else{this.accumulator=0;}
+    if(playing){
+      this.cameraMode.update(this.player,dt);
+      if(!this._lastHUD||this.t-this._lastHUD>.08){this.ui.updateHUD();this._lastHUD=this.t;}
+      if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
+      const p=this.player.position;if(p[1]<-20)this.recover();
+    }else if(title){
+      // Animated title-menu background, with the parked player's car as a hero object.
+      const orbit=this.t*.09,center=new THREE.Vector3(0,3,0);
+      this.camera.position.set(Math.sin(orbit)*21+9,11,Math.cos(orbit)*21+11);
+      this.camera.lookAt(center);this.camera.fov=64;this.camera.updateProjectionMatrix();
+    }
+    this.renderer.render(this.scene,this.camera);
+  }
+}
+const game=new Game();game.init();

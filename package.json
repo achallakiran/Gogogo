@@ -1,0 +1,19 @@
+{
+  "name": "voxel-city-driver",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "three": "0.180.0",
+    "@dimforge/rapier3d-compat": "0.18.0"
+  },
+  "devDependencies": {
+    "vite": "6.3.5"
+  }
+}
