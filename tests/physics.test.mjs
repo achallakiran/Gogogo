@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import RAPIER from '@dimforge/rapier3d-compat';
+import * as RAPIER from '@dimforge/rapier3d-compat';
 import {makeTerrainHeightfield, attachTerrainCollider} from '../src/world/terrainCollider.js';
 
 test('terrain collider heights are finite, correctly sized, and sample center', () => {

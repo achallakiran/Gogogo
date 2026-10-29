@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d-compat';
+import * as RAPIER from '@dimforge/rapier3d-compat';
 import {makeVehicleModel} from '../vehicles/Vehicle.js';
 import {VEHICLES} from '../core/config.js';
 import {terrainHeight} from '../world/World.js';
