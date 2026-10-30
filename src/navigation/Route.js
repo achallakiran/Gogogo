@@ -1,82 +1,78 @@
-import {MOUNTAIN_CONTROL_POINTS,MOUNTAIN_START} from '../world/MountainData.js';
+import {MOUNTAIN_CONTROL_POINTS} from '../world/MountainData.js';
 // Deterministic route planner for connected city streets and the authored mountain route.
 // Every waypoint belongs to an actual road intersection, including the airport spur.
 export const GRID=[-240,-180,-120,-60,0,60,120,180,240];
 export const AIRPORT_SPUR=[300,360];
 export const key=p=>p[0]+','+p[1];
 export const distance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
-function roadNodes(){
-  const nodes=[];
-  for(const x of GRID)for(const z of GRID)nodes.push([x,z]);
-  for(const x of AIRPORT_SPUR)nodes.push([x,-120]);
-  for(const [x,z] of MOUNTAIN_CONTROL_POINTS)nodes.push([x,z]);
-  return nodes;
+// The graph is built from authored roads, not from visual-only shortcuts.
+// Grid intersections are connected only to their immediate neighbours.
+import {COUNTRY_SAMPLES} from '../world/RegionalRoads.js';
+const COUNTRY_NODES=COUNTRY_SAMPLES.map(p=>[p.x,p.z]);
+const CITY_NODES=GRID.flatMap(x=>GRID.map(z=>[x,z]));
+const AIRPORT_NODES=AIRPORT_SPUR.map(x=>[x,-120]);
+const MOUNTAIN_NODES=MOUNTAIN_CONTROL_POINTS.map(p=>[...p]);
+const CONNECTOR=[[120,240],[120,272]];
+const NODES=[...CITY_NODES,...AIRPORT_NODES,...MOUNTAIN_NODES,...CONNECTOR,...COUNTRY_NODES];
+const graph=new Map();
+function connect(a,b){
+ const ak=key(a),bk=key(b);
+ if(!graph.has(ak))graph.set(ak,new Map());
+ if(!graph.has(bk))graph.set(bk,new Map());
+ graph.get(ak).set(bk,b);graph.get(bk).set(ak,a);
 }
-const NODES=roadNodes();
-const lookup=new Map(NODES.map((n,i)=>[key(n),i]));
-const mountainEdges=new Map();
-for(let i=0;i<MOUNTAIN_CONTROL_POINTS.length-1;i++){
-  const a=MOUNTAIN_CONTROL_POINTS[i],b=MOUNTAIN_CONTROL_POINTS[i+1];
-  const ak=key(a),bk=key(b);
-  if(!mountainEdges.has(ak))mountainEdges.set(ak,[]);
-  if(!mountainEdges.has(bk))mountainEdges.set(bk,[]);
-  mountainEdges.get(ak).push([b[0],b[1]]);
-  mountainEdges.get(bk).push([a[0],a[1]]);
+for(const [x,z] of CITY_NODES){
+ if(GRID.includes(x+60))connect([x,z],[x+60,z]);
+ if(GRID.includes(z+60))connect([x,z],[x,z+60]);
 }
-// The 32-metre connector joins the original city street to the mountain.
-const cityConnector=[120,240],ridgeConnector=[120,272];
-for(const [a,b] of [[cityConnector,ridgeConnector],[ridgeConnector,cityConnector]]){
-  const ak=key(a);if(!mountainEdges.has(ak))mountainEdges.set(ak,[]);
-  mountainEdges.get(ak).push(b);
-}
-function neighbours(node){
-  const [x,z]=node,opts=[[x-60,z],[x+60,z],[x,z-60],[x,z+60],...(mountainEdges.get(key(node))||[])];
-  return opts.filter(p=>lookup.has(key(p)));
-}
+connect([240,-120],[300,-120]);
+connect([300,-120],[360,-120]);
+for(let i=1;i<MOUNTAIN_NODES.length;i++)connect(MOUNTAIN_NODES[i-1],MOUNTAIN_NODES[i]);
+connect(CONNECTOR[0],CONNECTOR[1]);
+for(let i=1;i<COUNTRY_NODES.length;i++)connect(COUNTRY_NODES[i-1],COUNTRY_NODES[i]);
+export const ROAD_GRAPH_STATS=Object.freeze({nodes:NODES.length,edges:[...graph.values()].reduce((n,m)=>n+m.size,0)/2,countrysideNodes:COUNTRY_NODES.length});
 export function nearestNode(pos){
-  let candidate=NODES[0],best=Infinity;
-  for(const n of NODES){const score=distance(n,pos);if(score<best){candidate=n;best=score;}}
-  return [...candidate];
+ let best=NODES[0],distanceBest=Infinity;
+ for(const n of NODES){const d=distance(pos,n);if(d<distanceBest){best=n;distanceBest=d;}}
+ return [...best];
 }
 function simplify(points){
-  if(points.length<3)return points;
-  const result=[points[0]];
-  for(let i=1;i<points.length-1;i++){
-    const a=result[result.length-1],b=points[i],c=points[i+1];
-    const ax=b[0]-a[0],az=b[1]-a[1],bx=c[0]-b[0],bz=c[1]-b[1];
-    if(Math.abs(ax*bz-az*bx)>0.00001 || ax*bx+az*bz<0)result.push(b);
-  }
-  result.push(points[points.length-1]);
-  return result;
+ if(points.length<3)return points;
+ const out=[points[0]];
+ for(let i=1;i<points.length-1;i++){
+  const a=out[out.length-1],b=points[i],c=points[i+1];
+  const ax=b[0]-a[0],az=b[1]-a[1],bx=c[0]-b[0],bz=c[1]-b[1];
+  if(Math.abs(ax*bz-az*bx)>0.00001||ax*bx+az*bz<0)out.push(b);
+ }
+ out.push(points.at(-1));return out;
 }
 export function planRoadRoute(start,target){
-  if(!start||!target)return [];
-  const s=nearestNode(start),finish=nearestNode(target);
-  const begin=key(s),end=key(finish);
-  const q=[s],cost=new Map([[begin,0]]),parent=new Map(),visited=new Set();
-  while(q.length){
-    q.sort((a,b)=>(cost.get(key(a))+distance(a,finish))-(cost.get(key(b))+distance(b,finish)));
-    const node=q.shift(),k=key(node);
-    if(visited.has(k))continue;
-    visited.add(k);
-    if(k===end)break;
-    for(const other of neighbours(node)){
-      const nk=key(other),estimate=cost.get(k)+distance(node,other);
-      if(estimate>=(cost.get(nk)??Infinity))continue;
-      cost.set(nk,estimate);parent.set(nk,k);q.push(other);
-    }
+ if(!start||!target)return [];
+ const s=nearestNode(start),finish=nearestNode(target),begin=key(s),end=key(finish);
+ const q=[s],cost=new Map([[begin,0]]),parent=new Map(),visited=new Set();
+ while(q.length){
+  q.sort((a,b)=>(cost.get(key(a))+distance(a,finish))-(cost.get(key(b))+distance(b,finish)));
+  const node=q.shift(),k=key(node);
+  if(visited.has(k))continue;
+  visited.add(k);
+  if(k===end)break;
+  for(const next of graph.get(k)?.values()||[]){
+   const nk=key(next),estimate=cost.get(k)+distance(node,next);
+   if(estimate>=(cost.get(nk)??Infinity))continue;
+   cost.set(nk,estimate);parent.set(nk,k);q.push(next);
   }
-  let points=[finish],current=end,safety=0;
-  while(current!==begin&&parent.has(current)&&safety++<200){
-    current=parent.get(current);
-    points.unshift(current.split(',').map(Number));
-  }
-  if(current!==begin)return [start,target];
-  const core=simplify(points);
-  const route=[...core];
-  if(distance(start,route[0])>2)route.unshift([...start]);
-  if(distance(target,route[route.length-1])>2)route.push([...target]);
-  return route;
+ }
+ if(!cost.has(end))return [];
+ const points=[finish];let current=end;
+ while(current!==begin){
+  current=parent.get(current);
+  if(!current)return [];
+  points.unshift(current.split(',').map(Number));
+ }
+ const core=simplify(points),result=[...core];
+ if(distance(start,result[0])>2)result.unshift([...start]);
+ if(distance(target,result.at(-1))>2)result.push([...target]);
+ return result;
 }
 export function getNextTurn(current,route,yaw){
   if(!route.length)return null;

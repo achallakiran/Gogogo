@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {planRoadRoute,getNextTurn,nearestNode,GRID} from '../src/navigation/Route.js';
+import {COUNTRY_SAMPLES} from '../src/world/RegionalRoads.js';
 import {REVERSE_LIMIT,longitudinalAcceleration} from '../src/vehicles/DrivingDynamics.js';
 const spec={accel:29,brake:39,topSpeed:52};
 test('rapid throttle builds more acceleration than previous config',()=>{
@@ -32,4 +33,16 @@ test('route HUD shows ARRIVED at a passenger rather than U-TURN',()=>{
  const hint=getNextTurn([5,-75],route,Math.PI);
  assert.equal(hint.direction,'ARRIVED');
  assert.equal(hint.remaining,0);
+});
+
+test('country route is connected to the city and Skyport without an offroad shortcut',()=>{
+ 
+ const destination=COUNTRY_SAMPLES.at(-1);
+ const route=planRoadRoute([0,0],[destination.x,destination.z]);
+ assert.ok(route.length>5);
+ assert.ok(route.some(p=>p[0]===-240&&p[1]===240));
+ assert.deepEqual(route.at(-1),[destination.x,destination.z]);
+ const back=planRoadRoute([destination.x,destination.z],[355,-123]);
+ assert.ok(back.length>5);
+ assert.ok(back.some(p=>p[0]===-240&&p[1]===240));
 });
