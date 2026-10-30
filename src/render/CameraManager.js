@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 const modes=['chase','close','hood','cockpit','orbit'];
 export class CameraManager{
-  constructor(camera){this.camera=camera;this.mode='chase';this.orbitAngle=.5;this.occluders=[];this.ray=new THREE.Raycaster();this.initial=true;}
+  constructor(camera){this.camera=camera;this.mode='chase';this.orbitAngle=.5;this.occluders=[];this.ray=new THREE.Raycaster();this.initial=true;this.smoothedTarget=new THREE.Vector3();this.smoothedDistance=10;}
   setMode(mode){if(!modes.includes(mode))return;this.mode=mode;this.initial=true;}
   next(){this.setMode(modes[(modes.indexOf(this.mode)+1)%modes.length]);return this.mode;}
   rotateOrbit(delta){this.orbitAngle+=delta;}
@@ -22,10 +22,18 @@ export class CameraManager{
       const hits=this.ray.intersectObjects(this.occluders,false);
       if(hits.length)desired.copy(center).addScaledVector(diff,Math.max(2,hits[0].distance-.7));
     }
-    if(this.initial){this.camera.position.copy(desired);this.initial=false;}
-    else this.camera.position.lerp(desired,1-Math.exp(-dt*8));
-    const look=target.clone();if(this.mode==='chase'||this.mode==='close')look.addScaledVector(forward,2.8);
-    this.camera.lookAt(look);
-    this.camera.fov=['hood','cockpit'].includes(this.mode)?76:64;this.camera.updateProjectionMatrix();
+    const look=target.clone();
+    if(this.mode==='chase'||this.mode==='close')look.addScaledVector(forward,2.8);
+    if(this.initial){
+      this.camera.position.copy(desired);
+      this.smoothedTarget.copy(look);
+      this.initial=false;
+    }else{
+      this.camera.position.lerp(desired,1-Math.exp(-dt*5.5));
+      this.smoothedTarget.lerp(look,1-Math.exp(-dt*6));
+    }
+    this.camera.lookAt(this.smoothedTarget);
+    const targetFov=['hood','cockpit'].includes(this.mode)?76:64;
+    if(Math.abs(this.camera.fov-targetFov)>.01){this.camera.fov=targetFov;this.camera.updateProjectionMatrix();}
   }
 }

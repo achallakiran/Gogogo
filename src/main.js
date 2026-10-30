@@ -42,7 +42,7 @@ class Game{
       this.world=new RAPIER.World({x:0,y:-9.81,z:0});this.world.timestep=1/60;
       this.scene=new THREE.Scene();
       this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
-      this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.28;
+      this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.10;
       this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       this.container.appendChild(this.renderer.domElement);
       this.camera=new THREE.PerspectiveCamera(64,1,.1,1200);
@@ -110,36 +110,41 @@ class Game{
     if(k==='camera')this.cameraMode.setMode(value);
     this.sounds.configure(this.save.settings);this.applySettings();this.persist();}
   applySettings(){if(!this.renderer)return;const s=this.save.settings,isMobile=matchMedia('(pointer:coarse)').matches;
-    const pixelRatio=s.quality==='low'?1:s.quality==='medium'?1.3:s.quality==='high'?2:(isMobile?1.35:1.75);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low';
+    const pixelRatio=s.quality==='low'?0.85:s.quality==='medium'?1.15:s.quality==='high'?1.75:(isMobile?1.0:1.35);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low'&&(!isMobile||s.quality==='high');
     if(this.environment?.sun)this.environment.sun.castShadow=this.renderer.shadowMap.enabled;
     this.resize();}
   persist(){if(!this.save)return;if(this.player&&this.ui.screen==='playing'){
       const p=this.player.position;if(p.every(Number.isFinite)){this.save.position=p;this.save.heading=this.player.yaw;}
     }saveGame(this.save);}
   resize(){if(!this.camera||!this.renderer)return;const w=window.innerWidth,h=window.innerHeight;this.camera.aspect=Math.max(1,w)/Math.max(1,h);this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);}
-  tick(){requestAnimationFrame(this.tick);const dt=Math.min(this.clock.getDelta(),.05);this.t+=dt;
+  tick(){requestAnimationFrame(this.tick);
+    const dt=Math.min(this.clock.getDelta(),.05);this.t+=dt;
     const playing=this.ui.screen==='playing',title=this.ui.screen==='title';
-    if(playing||title){
-      this.accumulator=Math.min(this.accumulator+dt,.13);
-      while(this.accumulator>=1/60){
-        if(playing)this.player.drive(this.input,1/60,this.save.settings);
-        this.traffic.update(1/60,playing?this.player:null);
-        this.world.step();this.accumulator-=1/60;
-      }
-      this.player.sync(dt);this.missions.update(this.t);
-    }else{this.accumulator=0;}
     if(playing){
+      const step=1/60;
+      this.accumulator=Math.min(this.accumulator+dt,.10);
+      while(this.accumulator>=step){
+        this.player.drive(this.input,step,this.save.settings);
+        this.traffic.update(step,this.player);
+        this.world.step();
+        this.player.capturePhysicsPose();
+        this.accumulator-=step;
+      }
+      this.player.sync(dt,this.accumulator/step);
+      this.missions.update(this.t);
       this.cameraMode.update(this.player,dt);
-      if(!this._lastHUD||this.t-this._lastHUD>.08){this.ui.updateHUD();this._lastHUD=this.t;}
+      if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
-      const p=this.player.position;if(p[1]<-20)this.recover();
+      if(this.player.position[1]<-20)this.recover();
     }else if(title){
-      // Animated title-menu background, with the parked player's car as a hero object.
-      const orbit=this.t*.09,center=new THREE.Vector3(0,3,0);
-      this.camera.position.set(Math.sin(orbit)*21+9,11,Math.cos(orbit)*21+11);
-      this.camera.lookAt(center);this.camera.fov=64;this.camera.updateProjectionMatrix();
-    }
+      // Title is a stable, lightly animated postcard: no expensive physics/AI.
+      this.accumulator=0;
+      const t=this.t*.08;
+      this.camera.position.set(10+Math.sin(t)*2.2,15.5+Math.sin(t*.35)*.55,25+Math.cos(t)*2.0);
+      this.camera.lookAt(3,4,-72);
+      if(this.camera.fov!==53){this.camera.fov=53;this.camera.updateProjectionMatrix();}
+    }else{this.accumulator=0;}
     this.renderer.render(this.scene,this.camera);
   }
 }

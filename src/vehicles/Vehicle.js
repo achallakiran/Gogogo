@@ -63,7 +63,13 @@ export class Vehicle{
     for(const side of [-1,1])for(const axle of [-1,1]){
       world.createCollider(RAPIER.ColliderDesc.ball(spec.wheel*.86).setTranslation(side*(spec.width*.5-.06),-.5,axle*(spec.length*.5-spec.wheel*.85)).setFriction(1.75).setRestitution(.04).setDensity(.25),this.body);
     }
-    this.sync(0);
+    this.posePrev=null;this.poseCurr=null;this.capturePhysicsPose(true);this.sync(0,1);
+  }
+  capturePhysicsPose(reset=false){
+    const p=this.body.translation(),r=this.body.rotation();
+    const pose={position:new THREE.Vector3(p.x,p.y,p.z),rotation:new THREE.Quaternion(r.x,r.y,r.z,r.w)};
+    if(reset||!this.poseCurr){this.posePrev=pose;this.poseCurr=pose;}
+    else{this.posePrev=this.poseCurr;this.poseCurr=pose;}
   }
   get position(){const p=this.body.translation();return [p.x,p.y,p.z];}
   get horizontalSpeed(){const v=this.body.linvel();return Math.hypot(v.x,v.z);}
@@ -96,10 +102,12 @@ export class Vehicle{
     const av=body.angvel();body.setAngvel({x:av.x*.88,y:yawRate,z:av.z*.88},true);
     this.speed=forwardSpeed;
   }
-  sync(dt){
-    const p=this.body.translation(),q=this.body.rotation();
-    this.model.root.position.set(p.x,p.y,p.z);
-    this.model.root.quaternion.set(q.x,q.y,q.z,q.w);
+  sync(dt,alpha=1){
+    const curr=this.poseCurr,prev=this.posePrev||curr;
+    const pose=curr||{position:new THREE.Vector3(...this.position),rotation:new THREE.Quaternion()};
+    this.model.root.position.copy(prev?prev.position:pose.position).lerp(pose.position,THREE.MathUtils.clamp(alpha,0,1));
+    this.model.root.quaternion.copy(prev?prev.rotation:pose.rotation).slerp(pose.rotation,THREE.MathUtils.clamp(alpha,0,1));
+    const p=this.model.root.position;
     const visualLean=clamp(-this.steer*this.speed*.010,-.20,.20);
     this.model.chassis.rotation.z=THREE.MathUtils.damp(this.model.chassis.rotation.z,visualLean,5,Math.max(dt,.016));
     this.model.chassis.rotation.x=THREE.MathUtils.damp(this.model.chassis.rotation.x,clamp(-this.speed*.0014,-.06,.06),3,Math.max(dt,.016));
@@ -114,7 +122,7 @@ export class Vehicle{
   reset(at=[0,2,0],heading=0){
     this.body.setTranslation({x:at[0],y:Math.max(terrainHeight(at[0],at[2])+2,at[1]),z:at[2]},true);
     this.body.setRotation({x:0,y:Math.sin(heading/2),z:0,w:Math.cos(heading/2)},true);
-    this.body.setLinvel({x:0,y:0,z:0},true);this.body.setAngvel({x:0,y:0,z:0},true);this.steer=0;this.speed=0;this.sync(.016);
+    this.body.setLinvel({x:0,y:0,z:0},true);this.body.setAngvel({x:0,y:0,z:0},true);this.steer=0;this.speed=0;this.capturePhysicsPose(true);this.sync(.016,1);
   }
   setColor(hex){this.color=hex;this.model.paint.color.set(hex);}
   dispose(){this.scene.remove(this.model.root);this.model.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});this.world.removeRigidBody(this.body);}

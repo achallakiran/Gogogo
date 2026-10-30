@@ -2,8 +2,14 @@ import * as THREE from 'three';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import {AIRPORT,PICKUPS} from '../core/config.js';
 import {attachTerrainCollider} from './terrainCollider.js';
+import {createVoxelFacade,batchStaticScenery} from './Visuals.js';
 
-const MAT = (color, opts={})=>new THREE.MeshStandardMaterial({color,roughness:.85,metalness:0,...opts});
+const materialCache=new Map();
+const MAT = (color, opts={})=>{
+  const key=JSON.stringify([color,opts]);let mat=materialCache.get(key);
+  if(!mat){mat=new THREE.MeshLambertMaterial({color,...opts});materialCache.set(key,mat);}
+  return mat;
+};
 const roadMat=MAT('#334455'), roadAlt=MAT('#425469'), curbMat=MAT('#e9dcd0'), grass=MAT('#83bd8d');
 const white=MAT('#f5e8bd',{emissive:'#56482e',emissiveIntensity:.22});
 const dark=MAT('#182a3d');
@@ -12,8 +18,8 @@ const accent=['#fbc9a8','#86bdc6','#d7c1e5','#fed59b','#b5dbb5','#a7add0','#ffd9
 const storeNames=['MOONBEAN COFFEE','TINY MARKET','PIXEL PIZZA','BLOOM & CO','CITY BOOKS','NOVA TECH','LITTLE DONUTS','SKYLINE SHOP'];
 const S=THREE.MathUtils;
 function rng(seed=1234){let a=seed|0;return ()=>{a=(a*1664525+1013904223)|0;return (a>>>0)/4294967296;};}
-function box(parent, x,y,z, w,h,d, mat, cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m;}
-function cyl(parent,x,y,z,r1,r2,height,mat,segments=6){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,height,segments),mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
+function box(parent, x,y,z, w,h,d, mat, cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=cast && w>1 && h>.3 && d>.3;m.receiveShadow=true;parent.add(m);return m;}
+function cyl(parent,x,y,z,r1,r2,height,mat,segments=6){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,height,segments),mat);m.position.set(x,y,z);m.castShadow=height>2 && r1>1;parent.add(m);return m;}
 function labelTexture(text,fg='#ffffff',bg='#263a56'){
   const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,128);ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 48px system-ui,sans-serif';ctx.fillText(text.slice(0,19),256,64,480);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
@@ -75,6 +81,7 @@ function tree(parent,x,z,r=1){const y=terrainHeight(x,z);cyl(parent,x,y+1.55,z,.
 function building(scene,physics,x,z,w,d,h,color,rand,windowPositions,occluders){
   const y=terrainHeight(x,z);const material=MAT(color,{roughness:.72,metalness:.05});
   occluders.push(box(scene,x,y+h/2,z,w,h,d,material));
+  createVoxelFacade(scene,{x,y,z,w,d,h,seed:Math.floor(Math.abs(x*3+z*7))%100});
   // Skirting and rooftop
   box(scene,x,y+.55,z,w+.4,1.1,d+.4,MAT('#c3ad9a'));
   box(scene,x,y+h+.25,z,w+.8,.5,d+.8,MAT('#edf1f0'));
@@ -172,12 +179,17 @@ function details(scene){
   const lake=new THREE.Mesh(new THREE.CircleGeometry(60,48),MAT('#51bbd2',{metalness:.22,roughness:.18,transparent:true,opacity:.86}));lake.rotation.x=-Math.PI/2;lake.scale.set(1.65,.8,1);lake.position.set(-325,-1.3,335);scene.add(lake);
 }
 export function createWorld(scene,physics){
-  scene.background=new THREE.Color('#94c8e8');scene.fog=new THREE.FogExp2('#abd4e6',.00175);
-  const hemi=new THREE.HemisphereLight('#d8f2ff','#739a78',2.0);scene.add(hemi);
-  const sun=new THREE.DirectionalLight('#ffecc3',2.5);sun.position.set(-75,150,60);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  const skyCanvas=document.createElement('canvas');skyCanvas.width=4;skyCanvas.height=256;
+  const sc=skyCanvas.getContext('2d'),sky=sc.createLinearGradient(0,0,0,256);
+  sky.addColorStop(0,'#70b7cc');sky.addColorStop(.45,'#a6d4d0');sky.addColorStop(.8,'#f3cc9b');sky.addColorStop(1,'#f5d8b5');
+  sc.fillStyle=sky;sc.fillRect(0,0,4,256);
+  scene.background=new THREE.CanvasTexture(skyCanvas);scene.fog=new THREE.FogExp2('#e9c9a7',.0012);
+  const hemi=new THREE.HemisphereLight('#d8f2ff','#739a78',1.25);scene.add(hemi);
+  const sun=new THREE.DirectionalLight('#ffecc3',1.6);sun.position.set(-75,150,60);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
   sun.shadow.camera.left=-210;sun.shadow.camera.right=210;sun.shadow.camera.top=210;sun.shadow.camera.bottom=-210;sun.shadow.camera.far=410;
   sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);
   const skyG=new THREE.SphereGeometry(210,12,8);const skyM=MAT('#fff0b9',{emissive:'#f5db90',emissiveIntensity:.7});const sunBall=new THREE.Mesh(skyG,skyM);sunBall.position.set(-550,620,-680);scene.add(sunBall);
   terrain(scene,physics);buildRoads(scene);const occluders=buildings(scene,physics);airport(scene,physics);details(scene);
-  return {sun,hemi,occluders};
+  const batches=batchStaticScenery(scene,occluders);
+  return {sun,hemi,occluders,batches};
 }
