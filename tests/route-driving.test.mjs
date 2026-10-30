@@ -17,7 +17,9 @@ test('city road route only uses grid intersections and connected airport spur',(
   const route=planRoadRoute([0,2],[355,-123]);
   assert.ok(route.length>=3);
   assert.deepEqual(route.at(-1),[355,-123]);
-  assert.ok(route.some(([x,z])=>x===300&&z===-120));
+  // The planner simplifies collinear segments: a [240,-120] -> [360,-120]
+  // route passes through 300 even if 300 is not retained as a waypoint.
+  assert.ok(route.some(([x,z])=>x===240&&z===-120));
   assert.ok(route.some(([x,z])=>x===360&&z===-120));
 });
 test('navigation reads left/right relative to a north-facing player',()=>{

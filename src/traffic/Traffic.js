@@ -24,7 +24,7 @@ export class Traffic{
     const path=PATHS[i%PATHS.length],segment=Math.floor(rand()*path.length),next=(segment+1)%path.length;
     const point=lanePoint(path[segment],path[next]),to=lanePoint(path[next],path[(next+1)%path.length]);
     const t=rand()*.78;const x=point[0]+(to[0]-point[0])*t,z=point[1]+(to[1]-point[1])*t;
-    const spec=VEHICLES[i%4===0?2:0],v=makeVehicleModel(spec,['#e9c376','#f1b1c0','#82b5d8','#91c9b6','#ccb8e5','#e6efef'][i%6]);
+    const spec=VEHICLES[i%9===0?4:i%7===0?1:i%4===0?2:0],v=makeVehicleModel(spec,['#e9c376','#f1b1c0','#82b5d8','#91c9b6','#ccb8e5','#e6efef'][i%6]);
     const group=v.root;this.scene.add(group);group.position.set(x,terrainHeight(x,z)+1,z);
     const heading=Math.atan2(-(to[0]-point[0]),-(to[1]-point[1]));group.rotation.y=heading;
     const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(x,terrainHeight(x,z)+1,z).setRotation({x:0,y:Math.sin(heading/2),z:0,w:Math.cos(heading/2)}));

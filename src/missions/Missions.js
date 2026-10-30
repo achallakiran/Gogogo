@@ -1,15 +1,14 @@
 import * as THREE from 'three';
 import {PICKUPS,AIRPORT,tripReward,distance2} from '../core/config.js';
 import {terrainHeight} from '../world/World.js';
+import {makeVoxelPedestrian} from '../world/StreetLife.js';
 const mat=(color,opts={})=>new THREE.MeshStandardMaterial({color,roughness:.7,...opts});
 function block(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
 function person(scene,x,z,index){
   const o=new THREE.Group();o.position.set(x,terrainHeight(x,z),z);scene.add(o);
-  block(o,.65,1.05,.4,mat(['#59c4a6','#8fa8fa','#ffaf68','#cd9bd2','#e9c35f'][index%5]),0,1.15,0);
-  block(o,.62,.62,.60,mat('#f0c7a8'),0,2.0,0);
-  block(o,.3,.75,.33,mat('#304860'),-.2,.3,0);block(o,.3,.75,.33,mat('#304860'),.2,.3,0);
-  block(o,.3,.55,.35,mat('#e4b98f'),.5,1.2,0);
-  block(o,.55,.65,.35,mat('#3e689f'),-.75,.45,0);
+  const personBody=makeVoxelPedestrian(index);
+  personBody.scale.setScalar(1.18);
+  o.add(personBody);
   const marker=new THREE.Mesh(new THREE.TorusGeometry(1.8,.18,8,28),new THREE.MeshBasicMaterial({color:'#ffd46c',transparent:true,opacity:.92}));
   marker.rotation.x=Math.PI/2;marker.position.y=3.5;o.add(marker);
   const light=new THREE.PointLight('#ffde78',1.4,12);light.position.y=3.1;o.add(light);
