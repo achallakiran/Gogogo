@@ -1,0 +1,19 @@
+{
+  "name": "Gogogo — Voxel City Driver",
+  "short_name": "Gogogo",
+  "description": "Drive, explore and transport passengers through a colourful fictional voxel city.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#122a35",
+  "theme_color": "#143c4e",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

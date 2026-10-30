@@ -64,8 +64,51 @@ try {
   assert.ok(await steerLeft.evaluate(el=>el.classList.contains('down')),'Hold should highlight steering button');
   await page.mouse.up();
   assert.ok(!(await steerLeft.evaluate(el=>el.classList.contains('down'))),'Release should clear the button');
+  // The app's expand control must never be a silent no-op on browsers that
+  // cannot fullscreen regular HTML pages (notably iPhone Safari).
+  await page.evaluate(()=>{
+    Object.defineProperty(document.documentElement,'requestFullscreen',{value:undefined,configurable:true});
+    Object.defineProperty(document.documentElement,'webkitRequestFullscreen',{value:undefined,configurable:true});
+  });
+  await page.locator('[data-action="fullscreen"]').click();
+  await page.locator('#fullscreen-help').waitFor({timeout:5000});
+  assert.match(await page.locator('#fullscreen-help').innerText(),/FULLSCREEN OPTIONS/);
+  await page.locator('[data-action="dismiss-fullscreen-help"]').click();
+  assert.equal(await page.locator('#fullscreen-help').count(),0);
+
+  // A separate touch-enabled landscape viewport exercises the real coarse
+  // pointer CSS, including the interaction prompt while a taxi is at pickup.
+  const mobileContext=await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:1,hasTouch:true,isMobile:true});
+  try{
+    const mobile=await mobileContext.newPage();
+    await mobile.goto(origin+'?debug=1',{waitUntil:'domcontentloaded',timeout:30000});
+    await mobile.locator('.title-content').waitFor({timeout:30000});
+    await mobile.locator('[data-action="new-game"]').first().click();
+    await mobile.locator('#hud').waitFor({timeout:10000});
+    await mobile.evaluate(()=>{
+      const g=window.__GOGOGO_DEBUG__;
+      g.player.reset([5,2,-75],0);
+      g.ui.updateHUD(true);
+    });
+    const prompt=mobile.locator('#interact-prompt'),meter=mobile.locator('.hud-speed');
+    assert.ok(!(await prompt.evaluate(el=>el.classList.contains('hidden'))),'Expected pickup action at passenger location');
+    const [p,m,pedals]=await Promise.all([prompt.boundingBox(),meter.boundingBox(),mobile.locator('.touch-pedals').boundingBox()]);
+    const overlaps=(a,b)=>a&&b&&a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
+    assert.ok(!overlaps(p,m),'Passenger action must not overlap speedometer: '+JSON.stringify({p,m}));
+    assert.ok(!overlaps(p,pedals),'Passenger action must not overlap pedals: '+JSON.stringify({p,pedals}));
+    await mobile.screenshot({path:'game-mobile-passenger-smoke.png',timeout:18000});
+    // Pedestrians respond to a moving car. Run the logical reaction directly
+    // so the assertion doesn't depend on slow software-renderer frame pacing.
+    const reacted=await mobile.evaluate(()=>{
+      const g=window.__GOGOGO_DEBUG__,v=g.missions.pickups[0].visual;
+      g.player.body.setLinvel({x:0,y:0,z:-6},true);
+      g.missions.update(g.t,g.player,1/60);
+      return v.cooldown>0 && v.jumpStarted===g.t;
+    });
+    assert.ok(reacted,'Passenger should initiate a jump/evade reaction to a moving nearby car');
+  }finally{await mobileContext.close();}
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
-  console.log('Browser smoke PASSED: title, WebGL/WASM startup, playable HUD.');
+  console.log('Browser smoke PASSED: desktop drive, fullscreen feedback, mobile passenger placement, pedestrian reaction.');
 } catch(e) {
   console.error('BROWSER TEST FAILED:',e.message);
   console.error('JS ERRORS:',JSON.stringify(errors).slice(0,4000));

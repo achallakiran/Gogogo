@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="105" fill="#153846"/>
+<circle cx="390" cy="119" r="57" fill="#f0c875"/>
+<path d="M0 328 100 289 164 304 249 238 338 275 512 242v270H0Z" fill="#2f796c"/>
+<path d="M0 424 190 306h132l190 118v88H0Z" fill="#2b394a"/>
+<path d="M236 312h40v200h-40Z" fill="#f5c776" opacity=".9"/>
+<g stroke="#122c34" stroke-width="12">
+<rect x="120" y="236" width="272" height="148" rx="29" fill="#ffc65e"/>
+<path d="M167 239 200 180h113l36 59" fill="#f9d485"/>
+<rect x="197" y="192" width="115" height="43" rx="8" fill="#70b5bd"/>
+<rect x="144" y="275" width="62" height="43" rx="6" fill="#fcf0be"/>
+<rect x="306" y="275" width="62" height="43" rx="6" fill="#fcf0be"/>
+<path d="M176 350h161" stroke="#365360"/>
+<circle cx="190" cy="383" r="34" fill="#1d2832"/>
+<circle cx="326" cy="383" r="34" fill="#1d2832"/>
+</g>
+<path d="M225 155h64v24h-64z" fill="#fff0c2"/>
+<text x="257" y="172" font-family="system-ui,sans-serif" font-weight="900" font-size="15" text-anchor="middle" fill="#1b414d">GO!</text>
+</svg>

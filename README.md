@@ -16,6 +16,8 @@ The current GitHub Pages build now includes:
 - Toofan-inspired baked voxel pedestrians, market stalls, planters, benches and awnings; more diverse NPC traffic vehicles.
 - Existing collision, camera switching, menus, garage, settings and local saves are preserved.
 
+**Fullscreen on iPhone:** Browsers such as Safari do not provide the normal Fullscreen API for arbitrary webpage elements. Use **Share → Add to Home Screen** and launch the app from the Home Screen for a standalone, full-viewport experience. The fullscreen button now explains the fallback instead of silently failing. Android devices with PWA support can install the app using the included web app manifest.
+
 **Still planned:** Per-wheel suspension physics, deeper vehicle materials/animations, terrain variety, authored neighbourhood landmarks, better NPC pedestrian movement, traffic improvements and extensive device-specific tuning. Automated Chromium smoke tests ensure the game boots and menus work but do not substitute for visual/device playtesting.
 
 ---
