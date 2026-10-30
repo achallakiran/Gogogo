@@ -175,7 +175,9 @@
  #hud .interact-prompt{bottom:clamp(115px,28vh,178px)!important;min-width:0}
 }
 @media(max-width:360px){
- #hud .hud-speed{top:calc(env(safe-area-inset-top) + 67px)!important}
+ /* Specificity also protects this rule against injected coarse-pointer CSS
+    used by the mobile browser test and older mobile style engines. */
+ #hud .hud-speed.hud-speed{top:calc(env(safe-area-inset-top) + 67px)!important}
  #hud .mini-map-wrap{top:calc(env(safe-area-inset-top) + 115px)}
  #hud .hud-objective{width:105px;min-width:105px;max-width:105px;height:45px;gap:5px;padding:5px}
  #hud #route-arrow{width:33px;height:33px}
