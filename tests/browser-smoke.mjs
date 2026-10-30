@@ -169,6 +169,25 @@ try {
   const speed=Number((await page.locator('#speed').innerText()).trim());
   assert.ok(Number.isFinite(speed)&&speed>10,'Holding accelerate should move the car; speed='+speed+' km/h');
   await page.screenshot({path:'game-driving-smoke.png',timeout:15000});
+  // Mountain art inspection: fixed camera at the scenic uphill approach,
+  // facing the Pinecrest lodge. Review this alongside the city screenshot.
+  const mountainView=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    g.player.reset([175,2,437],-2.17);
+    g.player.capturePhysicsPose(true);g.player.sync(.016,1);
+    g.cameraMode.initial=true;
+    g.cameraMode.setMode('chase');
+    g.cameraMode.update(g.player,.016);
+    g.renderer.render(g.scene,g.camera);
+    return {at:g.player.position,lodge:g.environment.mountain.cabin.position.toArray()};
+  });
+  console.log('MOUNTAIN_VIEW',JSON.stringify(mountainView));
+  assert.ok(mountainView.at[1]>10,'Hill preview camera must stand on elevated terrain');
+  await page.screenshot({path:'game-mountain-smoke.png',timeout:18000});
+  await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    g.player.reset([0,2,0],0);g.cameraMode.initial=true;
+  });
 
   // Mobile controls must be SVG-only, selectable text is forbidden, and
   // pointer press must still register for the driving input mapper.
