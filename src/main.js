@@ -111,28 +111,53 @@ class Game{
     if(k==='camera')this.cameraMode.setMode(value);
     this.sounds.configure(this.save.settings);this.applySettings();this.persist();}
   applySettings(){if(!this.renderer)return;const s=this.save.settings,isMobile=matchMedia('(pointer:coarse)').matches;
-    const pixelRatio=s.quality==='low'?0.85:s.quality==='medium'?1.15:s.quality==='high'?1.75:(isMobile?1.0:1.35);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low'&&(!isMobile||s.quality==='high');
+    const pixelRatio=s.quality==='low'?.78:s.quality==='medium'?1.0:s.quality==='high'?1.65:(isMobile?.92:1.12);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));
+    // Real-time shadow maps replay city geometry several times. Prefer
+    // Toofan-style baked per-face shading for auto/balanced/mobile presets.
+    this.renderer.shadowMap.enabled=s.shadows&&s.quality==='high';
     if(this.environment?.sun)this.environment.sun.castShadow=this.renderer.shadowMap.enabled;
+    this._perf={avg:1/45,elapsed:0,adaptations:0};
     this.resize();}
   persist(){if(!this.save)return;if(this.player&&this.ui.screen==='playing'){
       const p=this.player.position;if(p.every(Number.isFinite)){this.save.position=p;this.save.heading=this.player.yaw;}
     }saveGame(this.save);}
   resize(){if(!this.camera||!this.renderer)return;const w=window.innerWidth,h=window.innerHeight;this.camera.aspect=Math.max(1,w)/Math.max(1,h);this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);}
   tick(){requestAnimationFrame(this.tick);this.frameCount=(this.frameCount||0)+1;
-    const dt=Math.min(this.clock.getDelta(),.05);this.t+=dt;
+    // Advance game time using the REAL elapsed interval. Clamping this to
+    // 0.05 made the car run in slow motion whenever a phone fell below 20fps.
+    const elapsed=Math.min(this.clock.getDelta(),.22),dt=Math.min(elapsed,.06);
+    this.t+=elapsed;
+    const perf=this._perf;
+    if(perf&&this.save.settings.quality==='auto'){
+      perf.avg=THREE.MathUtils.lerp(perf.avg,Math.max(.003,elapsed),.10);
+      perf.elapsed+=elapsed;
+      if(perf.elapsed>3.5){
+        const fps=1/Math.max(perf.avg,.001),dpr=this.renderer.getPixelRatio();
+        // Adapt resolution gradually and infrequently, not every frame.
+        if(fps<27 && dpr>.70){
+          this.renderer.setPixelRatio(Math.max(.70,dpr-.16));
+          this.resize();perf.adaptations++;
+        }else if(fps>53 && dpr<Math.min(window.devicePixelRatio||1,1.16)){
+          this.renderer.setPixelRatio(Math.min(1.16,dpr+.08));
+          this.resize();perf.adaptations++;
+        }
+        perf.elapsed=0;
+      }
+    }
     const playing=this.ui.screen==='playing',title=this.ui.screen==='title';
     if(playing){
       const step=1/60;
-      this.accumulator=Math.min(this.accumulator+dt,.10);
-      while(this.accumulator>=step){
+      this.accumulator=Math.min(this.accumulator+elapsed,.23);
+      let substeps=0;
+      while(this.accumulator>=step&&substeps<14){
         this.player.drive(this.input,step,this.save.settings);
         this.traffic.update(step,this.player);
         this.world.step();
         this.player.capturePhysicsPose();
-        this.accumulator-=step;
+        this.accumulator-=step;substeps++;
       }
-      this.player.sync(dt,this.accumulator/step);
+      this.player.sync(dt,Math.min(1,this.accumulator/step));
       this.missions.update(this.t);
       this.navigation.update(this.player,this.missions.target(this.player.position),this.t);
       this.cameraMode.update(this.player,dt);

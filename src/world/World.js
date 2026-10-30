@@ -8,7 +8,13 @@ import {populateStreetLife} from './StreetLife.js';
 const materialCache=new Map();
 const MAT = (color, opts={})=>{
   const key=JSON.stringify([color,opts]);let mat=materialCache.get(key);
-  if(!mat){mat=new THREE.MeshLambertMaterial({color,...opts});materialCache.set(key,mat);}
+  if(!mat){
+    // MeshLambertMaterial has no roughness or metalness; forwarding those
+    // keys produced console warnings for nearly every building.
+    const {roughness,metalness,...lambertOptions}=opts;
+    mat=new THREE.MeshLambertMaterial({color,...lambertOptions});
+    materialCache.set(key,mat);
+  }
   return mat;
 };
 const roadMat=MAT('#334455'), roadAlt=MAT('#425469'), curbMat=MAT('#e9dcd0'), grass=MAT('#83bd8d');
