@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createVoxelVehicleModel} from './VoxelVehicleModel.js';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import {terrainHeight} from '../world/World.js';
+import {steeringYawRate} from './Steering.js';
 
 const clamp=THREE.MathUtils.clamp;
 const material=(c,opts={})=>new THREE.MeshStandardMaterial({color:c,roughness:.58,metalness:.15,...opts});
@@ -58,7 +59,7 @@ export class Vehicle{
     const grip=clamp(spec.grip*gripFactor*dt,0,.96);
     body.applyImpulse({x:-right.x*lateralSpeed*grip*mass,y:0,z:-right.z*lateralSpeed*grip*mass},true);
     const speedFactor=clamp(Math.abs(forwardSpeed)/13,0,1);
-    const yawRate=this.steer*speedFactor*spec.handling*1.22*Math.sign(forwardSpeed||1);
+    const yawRate=steeringYawRate(this.steer,speedFactor,spec.handling,forwardSpeed);
     const av=body.angvel();body.setAngvel({x:av.x*.88,y:yawRate,z:av.z*.88},true);
     this.speed=forwardSpeed;
   }

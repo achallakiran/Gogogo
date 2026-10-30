@@ -11,3 +11,48 @@
 .game-brand h1{letter-spacing:-.055em;text-shadow:0 8px 28px #192524aa}
 .primary-cta{background:linear-gradient(110deg,#ffca67,#ee8b44)}
 .hud-objective,.hud-speed,.hud-cash{background:rgba(18,39,48,.84);border-color:#c5e1d455}
+
+/* Mobile driving controls: tangible translucent gamepad surfaces, vector-only glyphs. */
+.touch-pad,.touch-pad *,#hud [data-drive],#hud [data-drive] *{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+  touch-action:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.touch-pad button,#hud .hud-icon,#hud .interact-button{
+  display:flex;align-items:center;justify-content:center;
+  -webkit-user-select:none!important;user-select:none!important;
+  touch-action:none;cursor:pointer;position:relative;
+}
+.touch-pad button{
+  border-radius:20px;
+  background:linear-gradient(155deg,rgba(23,50,65,.94),rgba(13,31,44,.84));
+  border:1.6px solid rgba(237,250,255,.54);
+  color:#e8fbff;
+  box-shadow:inset 0 1px 2px #ffffff25,0 10px 24px #07151a75;
+  transition:background-color .10s,transform .08s,box-shadow .08s;
+}
+.touch-pad button.down,.touch-pad button:active{
+  background:linear-gradient(155deg,#f1c780,#deae58);
+  color:#263139;border-color:#fff0c7;
+  box-shadow:inset 0 3px 10px #86633255,0 2px 9px #0005;
+  transform:scale(.95);
+}
+.touch-pad .gas{background:linear-gradient(155deg,#17785f,#0a4b43);border-color:#91f5ca;}
+.touch-pad .brake{background:linear-gradient(155deg,#9d5355,#68373f);border-color:#ffc2ba;}
+.touch-pad .gas.down,.touch-pad .brake.down{background:linear-gradient(155deg,#f1c780,#deae58);}
+.ui-svg{display:block;width:25px;height:25px;flex-shrink:0;pointer-events:none}
+.touch-pad .ui-svg{width:34px;height:34px;stroke-width:2.25px}
+.touch-pad .gas .ui-svg,.touch-pad .brake .ui-svg{width:31px;height:38px}
+.hud-icon .ui-svg{width:22px;height:22px}
+.interact-button{padding:0;width:56px;height:56px;border-radius:50%;margin:0 auto}
+.interact-button .ui-svg{width:30px;height:30px}
+.interact-prompt{display:flex;flex-direction:column;align-items:center;gap:6px}
+.interact-caption{display:block;font-size:10px;letter-spacing:.06em;font-weight:850;color:#fff4d2;white-space:nowrap;text-shadow:0 2px 7px #000c;pointer-events:none}
+.car-symbol .ui-svg{width:44px;height:44px;stroke:#8dd2e7;stroke-width:1.5px}
+.touch-pad button::selection,.touch-pad *::selection{background:transparent}
+@media(max-height:550px){
+  .touch-pad .ui-svg{width:28px;height:28px}
+  .touch-pad .gas .ui-svg,.touch-pad .brake .ui-svg{width:26px;height:30px}
+}

@@ -6,7 +6,9 @@ export class Input{
     });
     window.addEventListener('keyup',event=>this.keys.delete(event.code));
     window.addEventListener('blur',()=>this.clear());
-    window.addEventListener('contextmenu',event=>{if(event.target.closest?.('.drive-pad'))event.preventDefault();});
+    window.addEventListener('contextmenu',event=>{if(event.target.closest?.('.touch-pad,[data-drive]'))event.preventDefault();});
+    document.addEventListener('selectstart',event=>{if(event.target.closest?.('.touch-pad,[data-drive]'))event.preventDefault();});
+    document.addEventListener('dragstart',event=>{if(event.target.closest?.('.touch-pad,[data-drive]'))event.preventDefault();});
   }
   get left(){return this.enabled && (this.keys.has('KeyA')||this.keys.has('ArrowLeft')||this.touch.has('left'));}
   get right(){return this.enabled && (this.keys.has('KeyD')||this.keys.has('ArrowRight')||this.touch.has('right'));}
@@ -17,6 +19,8 @@ export class Input{
   bindTouch(container){
     container.querySelectorAll('[data-drive]').forEach(el=>{
       const action=el.dataset.drive;
+      el.addEventListener('contextmenu',e=>e.preventDefault());
+      el.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
       el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture?.(e.pointerId);this.touch.add(action);el.classList.add('down');});
       for(const event of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(event,e=>{this.touch.delete(action);el.classList.remove('down');});
     });

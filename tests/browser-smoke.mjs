@@ -23,6 +23,21 @@ try {
   await page.locator('#hud').waitFor({timeout:10000});
   await page.waitForTimeout(800);
   assert.ok(await page.locator('#game canvas').count()>0,'Expected rendered canvas');
+  // Mobile controls must be SVG-only, selectable text is forbidden, and
+  // pointer press must still register for the driving input mapper.
+  const controls=await page.locator('.touch-pad [data-drive]').evaluateAll(btns=>btns.map(btn=>({
+    name:btn.dataset.drive,
+    svg:btn.querySelectorAll('svg').length,
+    text:btn.textContent.trim(),
+    selectable:getComputedStyle(btn).userSelect,
+    webkitSelectable:getComputedStyle(btn).webkitUserSelect,
+  })));
+  assert.deepEqual(controls.map(c=>c.name),['left','right','brake','gas']);
+  assert.ok(controls.every(c=>c.svg===1&&c.text===''&&c.selectable==='none'),JSON.stringify(controls));
+  assert.equal(await page.locator('.hud-icon svg').count(),3);
+  await page.locator('[data-drive="left"]').evaluate(el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:8,isPrimary:true})));
+  assert.ok(await page.locator('[data-drive="left"]').evaluate(el=>el.classList.contains('down')));
+  await page.locator('[data-drive="left"]').evaluate(el=>el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:8,isPrimary:true})));
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
   console.log('Browser smoke PASSED: title, WebGL/WASM startup, playable HUD.');
 } catch(e) {
