@@ -86,7 +86,7 @@ export function regionalRoadGeometry(region,columns=22){
    if(i<rows&&j<columns){
     const a=i*(columns+1)+j,b=a+1,c=a+columns+1,d=c+1;
     // Winding oriented to produce an upward-facing road.
-    indices.push(a,c,b,b,c,d);
+    indices.push(a,b,c,b,d,c);
    }
   }
  }
