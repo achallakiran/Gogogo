@@ -11,11 +11,11 @@ export const COLORS = [
   {name:'White', hex:'#f8fbff'}
 ];
 export const VEHICLES = [
-  {id:'taxi',name:'Sunset Taxi',subtitle:'The perfect city companion',price:0,accel:18,topSpeed:37,brake:23,handling:1.15,grip:8.0,suspension:0.13,width:1.95,length:4.15,wheel:0.52,bodyHeight:1.35,capacity:4,color:COLORS[0].hex},
-  {id:'coupe',name:'Lightning GT',subtitle:'Low, fast and exhilarating',price:1600,accel:31,topSpeed:63,brake:31,handling:1.25,grip:10.0,suspension:0.09,width:2.07,length:4.45,wheel:0.50,bodyHeight:0.99,capacity:1,color:COLORS[2].hex},
-  {id:'suv',name:'Summit Explorer',subtitle:'Comfort for every road',price:2800,accel:20,topSpeed:42,brake:25,handling:0.93,grip:8.6,suspension:0.24,width:2.15,length:4.70,wheel:0.64,bodyHeight:1.65,capacity:5,color:COLORS[1].hex},
-  {id:'truck',name:'Titan Monster',subtitle:'Go boldly beyond the asphalt',price:5200,accel:22,topSpeed:39,brake:23,handling:0.68,grip:7.6,suspension:0.38,width:2.85,length:5.15,wheel:0.96,bodyHeight:1.55,capacity:2,color:COLORS[3].hex},
-  {id:'van',name:'Skyport Shuttle',subtitle:'A whole crew and their luggage',price:3900,accel:15,topSpeed:32,brake:21,handling:0.74,grip:9.0,suspension:0.18,width:2.3,length:5.75,wheel:0.58,bodyHeight:2.0,capacity:8,color:COLORS[4].hex}
+  {id:'taxi',name:'Sunset Taxi',subtitle:'The perfect city companion',price:0,accel:29,topSpeed:52,brake:39,handling:1.15,grip:8.0,suspension:0.13,width:1.95,length:4.15,wheel:0.52,bodyHeight:1.35,capacity:4,color:COLORS[0].hex},
+  {id:'coupe',name:'Lightning GT',subtitle:'Low, fast and exhilarating',price:1600,accel:42,topSpeed:72,brake:50,handling:1.25,grip:10.0,suspension:0.09,width:2.07,length:4.45,wheel:0.50,bodyHeight:0.99,capacity:1,color:COLORS[2].hex},
+  {id:'suv',name:'Summit Explorer',subtitle:'Comfort for every road',price:2800,accel:30,topSpeed:54,brake:42,handling:0.93,grip:8.6,suspension:0.24,width:2.15,length:4.70,wheel:0.64,bodyHeight:1.65,capacity:5,color:COLORS[1].hex},
+  {id:'truck',name:'Titan Monster',subtitle:'Go boldly beyond the asphalt',price:5200,accel:26,topSpeed:46,brake:40,handling:0.68,grip:7.6,suspension:0.38,width:2.85,length:5.15,wheel:0.96,bodyHeight:1.55,capacity:2,color:COLORS[3].hex},
+  {id:'van',name:'Skyport Shuttle',subtitle:'A whole crew and their luggage',price:3900,accel:23,topSpeed:45,brake:38,handling:0.74,grip:9.0,suspension:0.18,width:2.3,length:5.75,wheel:0.58,bodyHeight:2.0,capacity:8,color:COLORS[4].hex}
 ];
 export const PICKUPS = [
   {id:'p0',pos:[5,-75],label:'Sunrise Plaza',passengers:1,bonus:0},

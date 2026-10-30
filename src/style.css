@@ -56,3 +56,27 @@
   .touch-pad .ui-svg{width:28px;height:28px}
   .touch-pad .gas .ui-svg,.touch-pad .brake .ui-svg{width:26px;height:30px}
 }
+
+/* Navigation compass, directional arrow and progress. Compact on a phone. */
+.hud-objective{max-width:min(460px,56vw);padding:10px 15px}
+.hud-objective-label{display:flex;justify-content:space-between;gap:14px}
+#route-status{color:#f9cb67;font-weight:900}
+.route-primary{display:flex;align-items:center;gap:10px;margin:9px 0 8px}
+#route-arrow{width:47px;height:47px;border-radius:13px;background:#eebf61;
+  color:#173a40;display:grid;place-items:center;flex-shrink:0;
+  transition:transform .16s ease-out;box-shadow:inset 0 2px 5px #fff4}
+#route-arrow svg{width:26px;height:26px}
+.route-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.route-copy b{font-size:clamp(17px,2.2vw,27px);font-weight:950;line-height:1;letter-spacing:.02em}
+.route-copy span{font-size:10px;color:#cae8e4;line-height:1.3;font-weight:700}
+@media(max-width:700px){
+ .hud-objective{max-width:57vw;padding:7px 9px}
+ .route-primary{gap:7px;margin:5px 0}
+ #route-arrow{width:36px;height:36px;border-radius:10px}
+ #route-arrow svg{width:21px;height:21px}
+ .route-copy b{font-size:15px}
+ .route-copy span{font-size:9px}
+ .hud-objective-label{font-size:8px;letter-spacing:.07em}
+ .hud-objective .objective-line{font-size:10px}
+ .hud-objective .objective-distance{font-size:9px}
+}

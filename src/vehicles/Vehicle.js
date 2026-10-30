@@ -3,6 +3,7 @@ import {createVoxelVehicleModel} from './VoxelVehicleModel.js';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import {terrainHeight} from '../world/World.js';
 import {steeringYawRate} from './Steering.js';
+import {longitudinalAcceleration} from './DrivingDynamics.js';
 
 const clamp=THREE.MathUtils.clamp;
 const material=(c,opts={})=>new THREE.MeshStandardMaterial({color:c,roughness:.58,metalness:.15,...opts});
@@ -45,20 +46,18 @@ export class Vehicle{
     const steerTarget=clamp((Number(input.right)-Number(input.left))*(.55+settings.sensitivity*.9),-1,1);
     this.steer=THREE.MathUtils.damp(this.steer,steerTarget,9,dt);
     // Forces are impulses integrated by Rapier's fixed physics step.
-    let accel=0;
-    if(input.gas) accel=spec.accel*(Math.max(0,1-this.horizontalSpeed/(spec.topSpeed*1.12)));
-    if(input.brake)accel=forwardSpeed>1?-spec.brake:-spec.accel*.44;
-    if(!input.gas&&!input.brake)accel=-forwardSpeed*.48;
-    const horizontalDrag=.004*this.horizontalSpeed*this.horizontalSpeed;
+    let accel=longitudinalAcceleration(input,forwardSpeed,spec);
+    const horizontalDrag=.0015*this.horizontalSpeed*this.horizontalSpeed;
     accel-=Math.sign(forwardSpeed)*horizontalDrag;
-    if(forwardSpeed>spec.topSpeed&&accel>0)accel=0;
+    this.braking=!!input.brake&&forwardSpeed>1.2;
+    this.reversing=forwardSpeed<-.7;
     body.applyImpulse({x:fwd.x*accel*dt*mass,y:0,z:fwd.z*accel*dt*mass},true);
     // Lateral tire traction: surfaces and vehicle type influence skids.
     const pos=body.translation();const offRoad=!([-240,-180,-120,-60,0,60,120,180,240].some(x=>Math.abs(pos.x-x)<8) || [-240,-180,-120,-60,0,60,120,180,240].some(z=>Math.abs(pos.z-z)<8));
     const gripFactor=offRoad ? (spec.id==='truck'?.90:.45) : 1;
     const grip=clamp(spec.grip*gripFactor*dt,0,.96);
     body.applyImpulse({x:-right.x*lateralSpeed*grip*mass,y:0,z:-right.z*lateralSpeed*grip*mass},true);
-    const speedFactor=clamp(Math.abs(forwardSpeed)/13,0,1);
+    const speedFactor=clamp(Math.abs(forwardSpeed)/8,0,1);
     const yawRate=steeringYawRate(this.steer,speedFactor,spec.handling,forwardSpeed);
     const av=body.angvel();body.setAngvel({x:av.x*.88,y:yawRate,z:av.z*.88},true);
     this.speed=forwardSpeed;

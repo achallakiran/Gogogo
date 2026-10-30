@@ -6,6 +6,7 @@ import {Vehicle} from './vehicles/Vehicle.js';
 import {Traffic} from './traffic/Traffic.js';
 import {Missions} from './missions/Missions.js';
 import {CameraManager} from './render/CameraManager.js';
+import {Navigator} from './navigation/Navigator.js';
 import {Input} from './core/Input.js';
 import {UI} from './ui/UI.js';
 import {Sounds} from './audio/Sounds.js';
@@ -48,7 +49,7 @@ class Game{
       this.camera=new THREE.PerspectiveCamera(64,1,.1,1200);
       this.cameraMode=new CameraManager(this.camera);
       const environment=createWorld(this.scene,this.world);this.environment=environment;this.cameraMode.occluders=environment.occluders;
-      this.missions=new Missions(this.scene);this.traffic=new Traffic(this.scene,this.world);
+      this.missions=new Missions(this.scene);this.navigation=new Navigator(this.scene);this.traffic=new Traffic(this.scene,this.world);
       this.spawnPlayer([0,2,0],0);
       this.applySettings();this.resize();
       this.ui.toTitle();this.clock=new THREE.Clock();requestAnimationFrame(this.tick);
@@ -133,11 +134,13 @@ class Game{
       }
       this.player.sync(dt,this.accumulator/step);
       this.missions.update(this.t);
+      this.navigation.update(this.player,this.missions.target(this.player.position),this.t);
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
       if(this.player.position[1]<-20)this.recover();
     }else if(title){
+      this.navigation.group.visible=false;this.navigation.beacon.visible=false;
       // Title is a stable, lightly animated postcard: no expensive physics/AI.
       this.accumulator=0;
       const t=this.t*.08;
