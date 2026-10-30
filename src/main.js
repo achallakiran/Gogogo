@@ -119,7 +119,7 @@ class Game{
       const p=this.player.position;if(p.every(Number.isFinite)){this.save.position=p;this.save.heading=this.player.yaw;}
     }saveGame(this.save);}
   resize(){if(!this.camera||!this.renderer)return;const w=window.innerWidth,h=window.innerHeight;this.camera.aspect=Math.max(1,w)/Math.max(1,h);this.camera.updateProjectionMatrix();this.renderer.setSize(w,h,false);}
-  tick(){requestAnimationFrame(this.tick);
+  tick(){requestAnimationFrame(this.tick);this.frameCount=(this.frameCount||0)+1;
     const dt=Math.min(this.clock.getDelta(),.05);this.t+=dt;
     const playing=this.ui.screen==='playing',title=this.ui.screen==='title';
     if(playing){
@@ -151,4 +151,6 @@ class Game{
     this.renderer.render(this.scene,this.camera);
   }
 }
-const game=new Game();game.init();
+const game=new Game();
+if(new URLSearchParams(location.search).has('debug'))window.__GOGOGO_DEBUG__=game;
+game.init();

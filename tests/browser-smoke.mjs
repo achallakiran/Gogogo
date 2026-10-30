@@ -10,7 +10,7 @@ page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')consoleMessage
 page.on('response',r=>{if(r.status()>=400)networkErrors.push(r.status()+' '+r.url());});
 page.on('requestfailed',r=>networkErrors.push(r.url()+' '+r.failure()?.errorText));
 try {
-  const response=await page.goto(origin,{waitUntil:'domcontentloaded',timeout:30000});
+  const response=await page.goto(origin+'?debug=1',{waitUntil:'domcontentloaded',timeout:30000});
   assert.equal(response.status(),200,'Vite preview should return 200');
   try {
     await page.waitForFunction(()=>!!document.querySelector('.title-content, .startup-error'),null,{timeout:20000});
@@ -32,6 +32,13 @@ try {
   await page.keyboard.down('w');
   await page.waitForTimeout(1950);
   await page.keyboard.up('w');
+  const diag=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    return g?{frames:g.frameCount,t:g.t,inputGas:g.input.gas,ui:g.ui.screen,
+      mass:g.player.body.mass(),body:g.player.body.translation(),
+      velocity:g.player.body.linvel(),horizontalSpeed:g.player.horizontalSpeed}:null;
+  });
+  console.log('DRIVING_DIAGNOSTICS',JSON.stringify(diag));
   const speed=Number((await page.locator('#speed').innerText()).trim());
   assert.ok(Number.isFinite(speed)&&speed>10,'Holding accelerate should move the car; speed='+speed+' km/h');
   await page.screenshot({path:'game-driving-smoke.png',timeout:15000});
