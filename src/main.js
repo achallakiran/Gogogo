@@ -114,6 +114,14 @@ class Game{
     this.input.clear();
     this.ui.toast('Back on the road!');
   }
+  probeObstacleRay(start,direction,maxDistance=70){
+    this.world.updateSceneQueries();
+    const hit=this.world.castRay(new RAPIER.Ray(
+      {x:start[0],y:start[1],z:start[2]},
+      {x:direction[0],y:direction[1],z:direction[2]}
+    ),maxDistance,true);
+    return {hit:!!hit,toi:hit?.timeOfImpact??null};
+  }
   probeGround(x,z){
     // Scene queries can be stale before the first physics step (especially
     // under SwiftShader startup). Explicitly sync the Rapier query pipeline.

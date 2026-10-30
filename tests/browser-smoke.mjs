@@ -58,6 +58,27 @@ try {
     return p[1]>1 && Math.abs(p[0])<300 && Math.abs(p[2])<300;
   });
   assert.ok(recovered,'Falling below ground must automatically recover the car');
+  const landmarkRays=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    const rays=[
+      {id:'clock-square',start:[-166,5,150],dir:[1,0,0],length:30},
+      {id:'metro-terminal',start:[120,9.4,150],dir:[1,0,0],length:60},
+      {id:'gogogo-welcome-gate',start:[-21,4,-27],dir:[1,0,0],length:25},
+      {id:'sunrise-plaza',start:[0,3,16],dir:[1,0,0],length:40},
+      {id:'skyport-airport',start:[380,8,-55],dir:[1,0,0],length:70},
+    ];
+    const hits=rays.map(r=>({...r,...g.probeObstacleRay(r.start,r.dir,r.length)}));
+    const gateOpen=g.probeObstacleRay([0,3,-37],[0,0,1],20);
+    return {hits,gateOpen};
+  });
+  console.log('LANDMARK_COLLISION_RAYS',JSON.stringify(landmarkRays));
+  for(const item of landmarkRays.hits){
+    assert.ok(item.hit&&Number.isFinite(item.toi)&&item.toi>=0&&item.toi<item.length,
+      'Expected solid obstacle for '+item.id+': '+JSON.stringify(item));
+  }
+  assert.equal(landmarkRays.gateOpen.hit,false,
+    'Welcome gate should leave the driving lane unobstructed: '+JSON.stringify(landmarkRays.gateOpen));
+
 
   assert.ok(await page.locator('#route-arrow svg').count()>0,'Expected GPS route arrow');
   assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');
@@ -188,6 +209,21 @@ try {
     return v.cooldown>0 && v.jumpStarted===g.t;
   });
   assert.ok(reacted,'Passenger should initiate a jump/evade reaction to a moving nearby car');
+  // Physical impact regression: accelerate a real taxi toward the welcome
+  // gate's western pillar and verify that it cannot drive through the post.
+  const impact=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,p=g.player;
+    p.reset([-9,2,-36],Math.PI);
+    for(let i=0;i<80;i++){
+      p.drive({gas:true,brake:false,left:false,right:false},1/60,g.save.settings);
+      g.world.step();
+    }
+    const at=p.position;
+    return {x:at[0],y:at[1],z:at[2],velocity:p.body.linvel()};
+  });
+  console.log('GATE_IMPACT',JSON.stringify(impact));
+  assert.ok(impact.z< -28.0 && Math.abs(impact.x+9)<3,
+    'Player car should not pass through gate pillar: '+JSON.stringify(impact));
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
   console.log('Browser smoke PASSED: desktop drive, fullscreen feedback, mobile passenger placement, pedestrian reaction.');
 } catch(e) {
