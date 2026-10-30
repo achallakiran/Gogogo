@@ -127,6 +127,17 @@ function guardrails(scene,physics){
  return {count:beams.length,colliderBodies,posts};
 }
 export function populateMountainDistrict(scene,physics){
+ // A short structural transition under the city-to-hill seam protects the
+ // junction from Rapier heightfield edge misses and stays coplanar with the
+ // existing city asphalt (unlike raised ramps that launch the vehicle).
+ let transitionBody=null;
+ if(physics){
+   const y=terrainHeight(120,268);
+   transitionBody=physics.createRigidBody(RAPIER.RigidBodyDesc.fixed()
+     .setTranslation(120,y-.05,268));
+   physics.createCollider(RAPIER.ColliderDesc.cuboid(5.35,.085,12.3).setFriction(1.3),transitionBody);
+ }
+
  // Road visuals are thin decorative ribbons draped on the SAME terrain
  // height function as the physics heightfield. No floating runway-like slab.
  const shoulder=terrainRibbon(scene,7.4,.051,0xaa8d6a);
@@ -147,6 +158,6 @@ export function populateMountainDistrict(scene,physics){
  const detail=decorateRidge(scene,physics);
  const cabin=lodge(scene);
  return {road:asphalt,shoulder,railCount:rails.count,
-  barrierBodies:rails.colliderBodies,length:MOUNTAIN_SAMPLES.length,
+  barrierBodies:rails.colliderBodies,transitionBody,length:MOUNTAIN_SAMPLES.length,
   trees:detail.treeCount,rocks:detail.rockCount,cabin};
 }

@@ -36,7 +36,7 @@ try {
     return {railCount:m.railCount,barriers:m.barrierBodies.length,
       trees:m.trees,rocks:m.rocks,navRoute:(g.navigation.getRoute()||[]).length,
       samples:m.length,
-      surfaces:[[120,272],[160,325],[175,390],[206,455]].map(([x,z])=>g.probeGround(x,z))};
+      surfaces:[[120,272],[120,275],[160,325],[175,390],[206,455]].map(([x,z])=>g.probeGround(x,z))};
   });
   console.log('MOUNTAIN_DISTRICT',JSON.stringify(hill));
   assert.ok(hill.railCount>15&&hill.barriers>15&&hill.trees>40&&hill.samples>130);
