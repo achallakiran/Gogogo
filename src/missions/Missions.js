@@ -27,10 +27,10 @@ export class Missions{
     for(const p of this.pickups){const d=distance2([position[0],position[2]],p.pos);if(d<best){best=d;closest=p;}}
     return best<9?closest:null;
   }
-  target(position){
+  target(position,capacity=Infinity){
     if(this.active)return {pos:AIRPORT.pos,label:AIRPORT.name,kind:'dropoff'};
     let nearest=null,best=Infinity;
-    for(const p of this.pickups){const d=distance2([position[0],position[2]],p.pos);if(d<best){best=d;nearest=p;}}
+    for(const p of this.pickups){if(p.passengers>capacity)continue;const d=distance2([position[0],position[2]],p.pos);if(d<best){best=d;nearest=p;}}
     return nearest?{pos:nearest.pos,label:nearest.label,kind:'pickup'}:null;
   }
   interact(position,capacity){

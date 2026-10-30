@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {PICKUPS,AIRPORT,VEHICLES,tripReward} from '../src/core/config.js';
+test('coast, countryside, mountain and settlements have fare-paying pickup points',()=>{const labels=PICKUPS.map(p=>p.label);for(const x of ['Coral Bay Beach','Country Valley','Mountain Trailhead','Northern Farmstead','South Workshop Row'])assert.ok(labels.includes(x));assert.ok(PICKUPS.length>=12);for(const p of PICKUPS)assert.ok(p.pos.every(Number.isFinite)&&tripReward(p.pos,AIRPORT.pos,p.bonus)>0);});
+test('existing purchasable cars can be unlocked with airport fares',()=>{assert.ok(VEHICLES.some(v=>v.price===1600));assert.ok(PICKUPS.some(p=>p.passengers<=4&&tripReward(p.pos,AIRPORT.pos,p.bonus)>600));});

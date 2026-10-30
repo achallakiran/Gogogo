@@ -23,9 +23,16 @@ export const PICKUPS = [
   {id:'p2',pos:[124,184],label:'Maple Gardens',passengers:3,bonus:120},
   {id:'p3',pos:[-184,-122],label:'Harbor Heights',passengers:1,bonus:100},
   {id:'p4',pos:[184,-245],label:'Westside Mall',passengers:4,bonus:180},
-  {id:'p5',pos:[206,460],label:'Pinecrest Lodge',passengers:2,bonus:280}
+  {id:'p5',pos:[206,460],label:'Pinecrest Lodge',passengers:2,bonus:280},
+  {id:'p6',pos:[-455,-339],label:'Coral Bay Beach',passengers:2,bonus:260},
+  {id:'p7',pos:[-385,366],label:'Country Valley',passengers:3,bonus:220},
+  {id:'p8',pos:[150,327],label:'Mountain Trailhead',passengers:2,bonus:230},
+  {id:'p9',pos:[247,182],label:'Eastside Suburb',passengers:2,bonus:130},
+  {id:'p10',pos:[-118,263],label:'Northern Farmstead',passengers:4,bonus:175},
+  {id:'p11',pos:[62,-263],label:'South Workshop Row',passengers:3,bonus:180},
+  {id:'p12',pos:[-385,-277],label:'West Hamlet Approach',passengers:5,bonus:300}
 ];
-export const AIRPORT = {pos:[355,-123],name:'Skyport International'};
+export const AIRPORT = {pos:[380,-120],name:'Skyport International'};
 export const DEFAULT_SETTINGS = {quality:'auto',sound:true,volume:0.55,sensitivity:0.65,camera:'chase',shadows:true,roadGuides:true};
 export const DEFAULT_SAVE = () => ({version:1,cash:0,earned:0,trips:0,owned:['taxi'],selected:'taxi',colors:{taxi:COLORS[0].hex},position:[0,2,0],heading:0,hasPlayed:false,settings:{...DEFAULT_SETTINGS}});
 export function formatMoney(n){return '$'+Math.round(n).toLocaleString('en-US');}

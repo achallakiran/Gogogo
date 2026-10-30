@@ -1,4 +1,4 @@
-import {VEHICLES,COLORS,formatMoney,DEFAULT_SAVE} from '../core/config.js';
+import {VEHICLES,COLORS,AIRPORT,tripReward,formatMoney,DEFAULT_SAVE} from '../core/config.js';
 import {svgIcon} from './icons.js';
 
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
@@ -27,7 +27,7 @@ export class UI{
     this.root.innerHTML=`<div class="panel-wash"></div><main class="panel settings-panel">${this.header('Settings','Tune your ride, your way.')}<div class="setting-grid"><div class="setting"><label for="quality">GRAPHICS QUALITY</label><select id="quality" data-setting="quality"><option value="auto" ${s.quality==='auto'?'selected':''}>Auto (recommended)</option><option value="low" ${s.quality==='low'?'selected':''}>Battery saver</option><option value="medium" ${s.quality==='medium'?'selected':''}>Balanced</option><option value="high" ${s.quality==='high'?'selected':''}>High</option></select></div><div class="setting"><label for="camera">DEFAULT CAMERA</label><select id="camera" data-setting="camera">${[['chase','Chase (default)'],['close','Close chase'],['hood','Hood'],['cockpit','Cockpit'],['orbit','Orbit']].map(([k,v])=>`<option value="${k}" ${s.camera===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="setting"><label for="sensitivity">STEERING SENSITIVITY <output id="sensitivity-label">${Math.round(s.sensitivity*100)}%</output></label><input id="sensitivity" type="range" min="20" max="100" value="${Math.round(s.sensitivity*100)}" data-setting="sensitivity"/></div><div class="setting"><label for="volume">SOUND VOLUME <output id="volume-label">${Math.round(s.volume*100)}%</output></label><input id="volume" type="range" min="0" max="100" value="${Math.round(s.volume*100)}" data-setting="volume"/></div><div class="setting"><label class="toggle-row"><span>GAME SOUNDS</span><input type="checkbox" data-setting="sound" ${s.sound?'checked':''}/></label></div><div class="setting"><label class="toggle-row"><span>REAL-TIME SHADOWS</span><input type="checkbox" data-setting="shadows" ${s.shadows?'checked':''}/></label></div><div class="setting"><label class="toggle-row"><span>ON-ROAD GUIDE ARROWS<small class="setting-subtitle">Soft blue arrows along your route</small></span><input type="checkbox" data-setting="roadGuides" ${s.roadGuides?'checked':''}/></label></div></div><div class="panel-note">Settings are saved automatically on this device. A faster graphics preset can help mobile battery life.</div><button data-action="back" class="primary-cta compact">${icon.check} SAVE & RETURN</button></main>`;
   }
   renderGarage(){const s=this.game.save;
-    this.root.innerHTML=`<div class="panel-wash"></div><main class="panel garage-panel">${this.header('The Garage','Collect your dream fleet. Paint every car for free.')}<div class="garage-top"><div class="money-pill">WALLET <strong>${formatMoney(s.cash)}</strong></div><span>${s.owned.length} / ${VEHICLES.length} VEHICLES OWNED</span></div><div class="car-grid">${VEHICLES.map(v=>{
+    this.root.innerHTML=`<div class="panel-wash"></div><main class="panel garage-panel">${this.header('The Garage','Collect your dream fleet. Paint every car for free.')}<div class="garage-top"><div class="money-pill">WALLET <strong>${formatMoney(s.cash)}</strong></div><span>${s.trips} TRIPS · TOTAL EARNED ${formatMoney(s.earned)} · ${s.owned.length}/${VEHICLES.length} CARS</span></div><p class="garage-progress">${VEHICLES.filter(v=>!s.owned.includes(v.id)).length?`NEXT UNLOCK: ${esc(VEHICLES.filter(v=>!s.owned.includes(v.id)).sort((a,b)=>a.price-b.price)[0].name)} · ${formatMoney(Math.max(0,VEHICLES.filter(v=>!s.owned.includes(v.id)).sort((a,b)=>a.price-b.price)[0].price-s.cash))} MORE TO EARN`:"ALL CARS UNLOCKED"}</p><div class="car-grid">${VEHICLES.map(v=>{
       const owned=s.owned.includes(v.id),selected=s.selected===v.id;
       return `<article class="car-card ${selected?'selected':''}"><div class="car-symbol">${svgIcon('car')}</div><div class="car-heading"><h3>${esc(v.name)}</h3>${selected?'<span class="selected-tag">DRIVING</span>':''}</div><p>${esc(v.subtitle)}</p><div class="car-stats"><span>⚡ ${Math.round(v.topSpeed*3.6)} km/h</span><span>◉ ${v.capacity} seats</span></div>${owned?`<div class="paint-label">FREE PAINT</div><div class="swatches">${COLORS.map(c=>`<button data-action="paint" data-car="${v.id}" data-color="${c.hex}" class="swatch ${s.colors[v.id]===c.hex?'active':''}" style="--paint:${c.hex}" aria-label="Paint ${esc(v.name)} ${c.name}" title="${c.name}"></button>`).join('')}</div><button class="garage-action" data-action="select" data-car="${v.id}" ${selected?'disabled':''}>${selected?'✓ SELECTED':'DRIVE THIS CAR'}</button>`:`<div class="garage-price">${formatMoney(v.price)}</div><button class="garage-action buy" data-action="buy" data-car="${v.id}" ${s.cash<v.price?'disabled':''}>${s.cash<v.price?'EARN MORE TO UNLOCK':'BUY VEHICLE'}</button>`}</article>`;
     }).join('')}</div><div class="garage-footnote">Every vehicle has its own handling. No paid performance upgrades. All paint colors are free.</div></main>`;
@@ -58,12 +58,12 @@ export class UI{
         <span id="route-turn" class="visually-hidden">STRAIGHT</span>
       </div>
       <div class="hud-actions">
-        <button type="button" class="hud-icon" data-action="camera-next" aria-label="Change camera" title="Change camera">${svgIcon('camera')}</button>
+        <button type="button" class="hud-icon" data-action="garage" aria-label="Open garage and buy cars" title="Garage">${svgIcon("car")}</button><button type="button" class="hud-icon" data-action="camera-next" aria-label="Change camera" title="Change camera">${svgIcon('camera')}</button>
         <button type="button" class="hud-icon" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">${svgIcon('fullscreen')}</button>
         <button type="button" class="hud-icon" data-action="pause" aria-label="Pause" title="Pause">${svgIcon('pause')}</button>
       </div>
     </div>
-    <div class="hud-speed" aria-label="Speed in kilometers per hour"><b id="speed">0</b><span>km/h</span></div>
+    <div class="hud-wallet" aria-label="Taxi earnings and wallet"><span>WALLET</span><strong id="wallet-balance">${formatMoney(this.game.save.cash)}</strong><small id="wallet-earned">EARNED ${formatMoney(this.game.save.earned)}</small><small id="wallet-fare">FIND A PASSENGER</small></div><div id="earnings-pop" class="earnings-pop hidden" role="status" aria-live="polite"></div><div class="hud-speed" aria-label="Speed in kilometers per hour"><b id="speed">0</b><span>km/h</span></div>
     <div class="mini-map-wrap"><canvas id="minimap" width="152" height="152" aria-label="Minimap"></canvas></div>
     <div id="interact-prompt" class="interact-prompt hidden"><button type="button" data-action="interact" class="interact-button" aria-label="Pick up passenger" title="Pick up passenger">${svgIcon('passenger')}</button></div>
     <div id="toast" class="toast hidden"></div>
@@ -81,9 +81,12 @@ export class UI{
     this.minimap=this.root.querySelector('#minimap');this.mmctx=this.minimap?.getContext('2d');this.updateHUD(true);
   }
   updateHUD(force=false){if(this.screen!=='playing'||!this.game.player)return;
-    const p=this.game.player.position,mission=this.game.missions, target=mission.target(p),nearest=mission.available(p),atAirport=mission.active&&Math.hypot(p[0]-355,p[2]+123)<13;
+    const p=this.game.player.position,mission=this.game.missions, target=mission.target(p,this.game.player.spec.capacity),nearest=mission.available(p),atAirport=mission.active&&Math.hypot(p[0]-AIRPORT.pos[0],p[2]-AIRPORT.pos[1])<13;
     const q=id=>this.root.querySelector('#'+id);
     q('speed').textContent=Math.round(this.game.player.horizontalSpeed*3.6);
+    q('wallet-balance').textContent=formatMoney(this.game.save.cash);
+    q('wallet-earned').textContent='EARNED '+formatMoney(this.game.save.earned)+' · '+this.game.save.trips+' RIDES';
+    q('wallet-fare').textContent=mission.active?'THIS TRIP +'+formatMoney(tripReward(mission.active.pos,AIRPORT.pos,mission.active.bonus)):'AIRPORT RIDES PAY CASH';
     const hint=this.game.navigation?.direction;
     const metres=target?Math.round(Math.hypot(p[0]-target.pos[0],p[2]-target.pos[1])):0;
     const arrived=metres<9;
@@ -114,7 +117,7 @@ export class UI{
       ctx.beginPath();ctx.moveTo(-270*scale,n*scale);ctx.lineTo((n===-120?420:270)*scale,n*scale);ctx.stroke();
     }
     const point=(x,z,color,r)=>{ctx.beginPath();ctx.arc(x*scale,z*scale,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};
-    point(355,-123,'#53e3e7',4);for(const x of this.game.missions.pickups){point(x.pos[0],x.pos[1],'#ffd56e',2.6);}
+    point(AIRPORT.pos[0],AIRPORT.pos[1],'#53e3e7',4);for(const x of this.game.missions.pickups){point(x.pos[0],x.pos[1],'#ffd56e',2.6);}
     if(target){
       const route=this.game.navigation?.getRoute()||[];
       if(route.length>1){
@@ -126,6 +129,10 @@ export class UI{
       point(target.pos[0],target.pos[1],target.kind==='dropoff'?'#5ceade':'#ffd56e',4.2);
     }
     ctx.restore();ctx.save();ctx.translate(w/2,h/2);ctx.rotate(-this.game.player.yaw);ctx.beginPath();ctx.moveTo(0,-9);ctx.lineTo(-5,6);ctx.lineTo(5,6);ctx.closePath();ctx.fillStyle='#fff';ctx.fill();ctx.restore();
+  }
+  showEarnings(amount){const panel=this.root.querySelector('#earnings-pop');if(!panel)return;
+    panel.textContent='TRIP COMPLETE  +'+formatMoney(amount);panel.classList.remove('hidden');
+    clearTimeout(this.earningsTimeout);this.earningsTimeout=setTimeout(()=>panel.classList.add('hidden'),4500);this.updateHUD(true);
   }
   toast(message,type='success'){if(this.screen!=='playing')return;const e=this.root.querySelector('#toast');if(!e)return;e.textContent=message;e.classList.remove('hidden');e.dataset.type=type;clearTimeout(this.toastTimeout);this.toastTimeout=setTimeout(()=>e.classList.add('hidden'),3000);}
   click(e){const t=e.target.closest('[data-action]');if(!t)return;const action=t.dataset.action;this.game.sounds.play('click');

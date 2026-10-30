@@ -154,7 +154,7 @@ class Game{
     if(result.type==='picked'){this.ui.toast(`${result.mission.passengers} passenger${result.mission.passengers===1?'':'s'} aboard! Head for Skyport ✈`);this.sounds.play('pickup');}
     else if(result.type==='completed'){
       this.save.cash+=result.amount;this.save.earned+=result.amount;this.save.trips++;
-      this.ui.toast(`Airport trip complete! +${formatMoney(result.amount)} 🎉`);this.sounds.play('reward');this.persist();
+      this.ui.toast(`Airport trip complete! +${formatMoney(result.amount)} 🎉`);this.ui.showEarnings(result.amount);this.sounds.play('reward');this.persist();
     }else if(result.type==='capacity'){this.ui.toast(`This group needs ${result.needed} seats. Try another vehicle.`,'warn');this.sounds.play('error');}
     else this.ui.toast('Move closer to a passenger or airport marker.','warn');
   }
@@ -225,7 +225,7 @@ class Game{
       this.player.sync(dt,Math.min(1,this.accumulator/step));
       this.missions.update(this.t,this.player,dt);
       this.environment?.streetLife?.update(this.player,dt,this.t);
-      this.navigation.update(this.player,this.missions.target(this.player.position),this.t);
+      this.navigation.update(this.player,this.missions.target(this.player.position,this.player.spec.capacity),this.t);
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
