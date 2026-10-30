@@ -1,3 +1,12 @@
+### Local mountain ground collision patch
+
+Some points off the mountain road could fall through the Rapier heightfield
+to the deep safety plane even when the terrain was visibly above it. A
+localized **triangle-mesh collision overlay extracted from the actual visible
+terrain mesh** now closes that gap. It does not add fake terrain slabs or
+move existing landmarks, and the browser regression checks raycast heights
+against the actual terrain.
+
 ### v0.3 Phase 2 — Environmental art pass
 
 The Pinecrest and countryside areas now use deterministic alpine vs valley

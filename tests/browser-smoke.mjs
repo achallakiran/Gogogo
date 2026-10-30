@@ -59,6 +59,7 @@ try {
     return {counts:s.counts,background:s.background.length,
       obstacles:s.obstacleCount,meshCount:Object.keys(s.meshes).length,
       groundColors:!!ground,validMaterials,
+      mountainPatchTriangles:g.environment.terrainPatch?.triangles||0,
       samples:[[150,340],[205,455],[-360,350]].map(([x,z])=>g.probeGround(x,z))};
   });
   console.log('BIOME_SCENERY',JSON.stringify(biomeStats));
@@ -67,9 +68,12 @@ try {
   assert.ok(biomeStats.counts.outcrops>35&&biomeStats.obstacles>5,
     'Faceted cliff rock and collidable near-road obstacles required: '+JSON.stringify(biomeStats));
   assert.equal(biomeStats.background,3);
+  assert.ok(biomeStats.mountainPatchTriangles>1000,
+    'High-detail mountain collider must be built directly from terrain mesh');
   assert.ok(biomeStats.groundColors&&biomeStats.validMaterials);
-  assert.ok(biomeStats.samples.every(p=>p.hit&&p.toi<70),
-    'Ground under biomes must remain collidable: '+JSON.stringify(biomeStats));
+  assert.ok(biomeStats.samples.every(p=>p.hit&&Number.isFinite(p.toi)&&
+    Math.abs((65-p.toi)-p.groundHeight)<3.5),
+    'Mountain/country physics must match visible ground, not the deep safety floor: '+JSON.stringify(biomeStats));
 
   assert.equal(regions.count,3);
   assert.equal(regions.holeCount,7);

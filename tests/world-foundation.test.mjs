@@ -99,3 +99,15 @@ test('biome colors are deterministic and permanent urban landmarks retain their 
  assert.ok([...colors.array].every(Number.isFinite));
  geo.dispose();
 });
+
+test('mountain collider duplicates actual visible terrain triangles without inventing elevations',async()=>{
+ const {buildMountainCollisionTriangles}=await import('../src/world/MountainSurfacePatch.js');
+ const {makeTerrainHeightfield}=await import('../src/world/terrainCollider.js');
+ const {createTerrainGeometry}=await import('../src/world/SurfaceSystem.js');
+ const terrain=createTerrainGeometry(makeTerrainHeightfield(terrainHeight));
+ const data=buildMountainCollisionTriangles(terrain);
+ assert.ok(data.triangles>1000&&data.triangles<terrain.getIndex().count/3);
+ assert.ok(data.indices.every(i=>i<terrain.getAttribute('position').count));
+ assert.equal(data.positions,terrain.getAttribute('position').array);
+ terrain.dispose();
+});

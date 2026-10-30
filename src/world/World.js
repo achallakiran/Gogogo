@@ -13,6 +13,7 @@ import {populateMountainDistrict} from './MountainDistrict.js';
 import {populateRoadDamage} from './RoadDamage.js';
 import {populateRegionalRoads} from './RegionalRoads.js';
 import {colorizeTerrain,populateBiomeScenery} from './BiomeScenery.js';
+import {attachMountainCollisionPatch} from './MountainSurfacePatch.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -64,6 +65,7 @@ function terrain(scene,physics){
   const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true}));
   m.receiveShadow=true;scene.add(m);
   if(physics)attachTerrainCollider(physics,RAPIER,terrainHeight,sampleGrid);
+  return attachMountainCollisionPatch(physics,RAPIER,g);
 }
 // Keep adjacent street strips out of overlapping intersection polygons.
 export function roadSegments(crossings,start,end,halfGap){
@@ -236,7 +238,7 @@ export function createWorld(scene,physics){
   sun.shadow.camera.left=-210;sun.shadow.camera.right=210;sun.shadow.camera.top=210;sun.shadow.camera.bottom=-210;sun.shadow.camera.far=410;
   sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);
   const skyG=new THREE.SphereGeometry(210,12,8);const skyM=MAT('#fff0b9',{emissive:'#f5db90',emissiveIntensity:.7});const sunBall=new THREE.Mesh(skyG,skyM);sunBall.position.set(-550,620,-680);scene.add(sunBall);
-  terrain(scene,physics);buildRoads(scene);
+  const terrainPatch=terrain(scene,physics);buildRoads(scene);
   const occluders=buildings(scene,physics);
   airport(scene,physics);details(scene);
   const streetLife=populateStreetLife(scene,terrainHeight);
@@ -247,6 +249,6 @@ export function createWorld(scene,physics){
   const regionalRoads=populateRegionalRoads(scene,physics,RAPIER);
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,biomes,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,biomes,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

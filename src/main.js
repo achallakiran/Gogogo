@@ -128,7 +128,7 @@ class Game{
     this.world.updateSceneQueries();
     const hit=this.world.castRay(new RAPIER.Ray({x,y:65,z},{x:0,y:-1,z:0}),90,true);
     return {x,z,hit:!!hit,toi:hit?.timeOfImpact??null,
-      colliderCount:this.world.colliders.len()};
+      groundHeight:terrainHeight(x,z),colliderCount:this.world.colliders.len()};
   }
   keepCarOnGround(){
     if(!this.player)return;
