@@ -94,11 +94,26 @@ export class Vehicle{
     const visualLean=clamp(-this.steer*this.speed*.010,-.20,.20);
     this.model.chassis.rotation.z=THREE.MathUtils.damp(this.model.chassis.rotation.z,visualLean,5,Math.max(dt,.016));
     this.model.chassis.rotation.x=THREE.MathUtils.damp(this.model.chassis.rotation.x,clamp(-this.speed*.0014,-.06,.06),3,Math.max(dt,.016));
+    // A wheel's world position depends on vehicle heading. Sample actual
+    // physics contact (including repaired asphalt), not unrotated terrain.
     for(const w of this.model.wheels){
       w.holder.rotation.y=w.axle<0?this.steer*.38:0;
-      const surface=terrainHeight(p.x+(w.side*this.spec.width*.5),p.z+(w.axle*this.spec.length*.35));
-      const compressed=clamp((surface+this.spec.wheel+ .48 - p.y)*.15,-this.spec.suspension,this.spec.suspension);
-      w.holder.position.y=THREE.MathUtils.damp(w.holder.position.y,w.baseY+compressed,9,Math.max(dt,.016));
+      const local=new THREE.Vector3(
+        w.side*(this.spec.width*.5-.06),0,
+        w.axle*(this.spec.length*.5-this.spec.wheel*.85)
+      ).applyQuaternion(this.model.root.quaternion);
+      const wx=p.x+local.x,wz=p.z+local.z,rayY=p.y+local.y+1.1;
+      const hit=this.world.castRay(new RAPIER.Ray(
+        {x:wx,y:rayY,z:wz},{x:0,y:-1,z:0}),4,true,
+        undefined,undefined,undefined,this.body);
+      const floor=hit?rayY-hit.timeOfImpact:terrainHeight(wx,wz);
+      // Strictly visual spring travel, deliberately cannot launch the chassis.
+      const desired=clamp(floor+this.spec.wheel*.86-p.y-w.baseY,
+        -this.spec.suspension,this.spec.suspension);
+      w.holder.position.y=THREE.MathUtils.damp(w.holder.position.y,
+        w.baseY+desired,11,Math.max(dt,.016));
+      w.travel=w.holder.position.y-w.baseY;
+      w.contactY=floor;
       w.spin.rotation.x+=this.speed*Math.max(dt,.016)/this.spec.wheel;
     }
   }

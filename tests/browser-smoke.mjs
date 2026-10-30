@@ -39,6 +39,20 @@ try {
       surfaces:[[120,272],[120,275],[160,325],[175,390],[206,455]].map(([x,z])=>g.probeGround(x,z))};
   });
   console.log('MOUNTAIN_DISTRICT',JSON.stringify(hill));
+  const potholeTest=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,r=g.environment.roadDamage;
+    const holes=r.potholes.map(h=>{
+      const bottom=g.probeGround(h.x,h.z),rim=g.probeGround(h.x+h.rx*1.7,h.z);
+      return {x:h.x,z:h.z,depth:(bottom.toi??0)-(rim.toi??0)};
+    });
+    return {stones:r.stoneCount,holes,hasPhysics:!!r.collider};
+  });
+  console.log('POTHOLE_PHYSICS',JSON.stringify(potholeTest));
+  assert.ok(potholeTest.hasPhysics&&potholeTest.stones>50&&potholeTest.holes.length===3,
+    'Detailed pothole surface should exist');
+  assert.ok(potholeTest.holes.every(h=>h.depth>.09&&h.depth<.40),
+    'Potholes must register physical depth: '+JSON.stringify(potholeTest));
+
   assert.ok(hill.railCount>15&&hill.barriers>15&&hill.trees>40&&hill.samples>130);
   assert.ok(hill.surfaces.every(s=>s.hit&&s.toi<68.5),'Mountain terrain must be physically supported '+JSON.stringify(hill));
   assert.equal(worldFoundation?.version,1);
@@ -186,6 +200,24 @@ try {
   console.log('MOUNTAIN_VIEW',JSON.stringify(mountainView));
   assert.ok(mountainView.at[1]>10,'Hill preview camera must stand on elevated terrain');
   await page.screenshot({path:'game-mountain-smoke.png',timeout:18000});
+  const damageDrive=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,p=g.player;
+    p.reset([60,2,108],0);
+    let maxTilt=0,maxUp=0,maxHeight=0;
+    for(let i=0;i<160;i++){
+      p.drive({gas:true,brake:false,left:false,right:false},1/60,g.save.settings);
+      g.world.step();p.stabilizeAfterStep();p.capturePhysicsPose();
+      const b=p.body.translation(),q=p.body.rotation();
+      maxTilt=Math.max(maxTilt,Math.acos(Math.min(1,Math.max(-1,1-2*(q.x*q.x+q.z*q.z))))*180/Math.PI);
+      maxUp=Math.max(maxUp,p.body.linvel().y);
+      maxHeight=Math.max(maxHeight,b.y);
+    }
+    p.reset([0,2,0],0);
+    return {maxTilt,maxUp,maxHeight};
+  });
+  console.log('POTHOLE_DRIVE',JSON.stringify(damageDrive));
+  assert.ok(damageDrive.maxTilt<36&&damageDrive.maxUp<5.5&&damageDrive.maxHeight<8,
+    'Car must remain stable driving over broken road: '+JSON.stringify(damageDrive));
   const mountainDrive=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,p=g.player,route=g.environment.mountain.samples;
     const points=[route[14],route[43],route[82],route[118]];

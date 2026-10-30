@@ -10,6 +10,7 @@ import {FIXED_LANDMARKS,overlapsProtectedFootprint} from './WorldManifest.js';
 import {attachLandmarkColliders} from './LandmarkColliders.js';
 import {makeTerrainHeightfield} from './terrainCollider.js';
 import {populateMountainDistrict} from './MountainDistrict.js';
+import {populateRoadDamage} from './RoadDamage.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -239,7 +240,8 @@ export function createWorld(scene,physics){
   const landmarkCount=populateLandmarks(scene,terrainHeight);
   const landmarkColliders=attachLandmarkColliders(physics,RAPIER,terrainHeight);
   const mountain=populateMountainDistrict(scene,physics);
+  const roadDamage=populateRoadDamage(scene,physics);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

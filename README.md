@@ -1,3 +1,16 @@
+### Road damage and suspension test slice (v0.3 Phase 2)
+
+A fixed city road section near coordinates (60,90) contains three varied
+irregular potholes, cracking and gravel. A single high-resolution road mesh
+supplies both visible triangles and Rapier collision triangles. The patch
+rises gradually to accommodate actual recessed holes without altering the
+existing terrain foundations. Wheel animation now samples rotated wheel
+positions against physical surfaces. This is visual suspension travel, not
+yet four independent spring-damper physical suspensions.
+
+The test suite checks generated geometry, pothole depth via world raycasts,
+and stability during an actual drive across the damaged section.
+
 ## v0.3 Phase 2 preview — Pinecrest Hills
 
 This preview introduces one authored scenic mountain-road district north of the city,
