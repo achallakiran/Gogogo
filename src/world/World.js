@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import {AIRPORT,PICKUPS} from '../core/config.js';
-import {attachTerrainCollider} from './terrainCollider.js';
+import {attachTerrainCollider,TERRAIN_WIDTH,TERRAIN_DEPTH} from './terrainCollider.js';
 import {createVoxelFacade,batchStaticScenery} from './Visuals.js';
 import {populateStreetLife} from './StreetLife.js';
 import {populateLandmarks} from './CityLandmarks.js';
@@ -58,10 +58,15 @@ export function terrainHeight(x,z){
     dips-=.45*Math.exp(-r*.7);
   }
   const bump=.12*Math.exp(-Math.pow((z+188)/2.8,2))*Math.exp(-Math.pow(x/65,4));
-  return hills + dips + bump;
+  // Airport's terminal, apron and runway are built at ground level y=0.
+  // Smoothly settle the underlying hills to that same elevation to avoid
+  // visible tarmac sheets or collisions below/above the runway surface.
+  const airportZone=S.smoothstep(x,345,376) *
+    S.smoothstep(z,-280,-245) * (1-S.smoothstep(z,21,49));
+  return (hills+dips+bump)*(1-airportZone);
 }
 function terrain(scene,physics){
-  const g=new THREE.PlaneGeometry(900,730,180,146);g.rotateX(-Math.PI/2);
+  const g=new THREE.PlaneGeometry(TERRAIN_WIDTH,TERRAIN_DEPTH,220,166);g.rotateX(-Math.PI/2);
   const a=g.attributes.position;
   for(let i=0;i<a.count;i++)a.setY(i,terrainHeight(a.getX(i),a.getZ(i)));
   g.computeVertexNormals();const m=new THREE.Mesh(g,grass);m.receiveShadow=true;scene.add(m);

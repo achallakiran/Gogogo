@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import './style.css';
 import {createWorld,terrainHeight} from './world/World.js';
+import {TERRAIN_WIDTH,TERRAIN_DEPTH} from './world/terrainCollider.js';
 import {Vehicle} from './vehicles/Vehicle.js';
 import {Traffic} from './traffic/Traffic.js';
 import {Missions} from './missions/Missions.js';
@@ -60,6 +61,8 @@ class Game{
     const spec=VEHICLES.find(v=>v.id===this.save.selected)||VEHICLES[0];
     this.player=new Vehicle(this.scene,this.world,spec,this.save.colors[spec.id]||spec.color,pos,heading);
     if(this.cameraMode)this.cameraMode.initial=true;
+    // Newly spawned or purchased cars always have a safe recovery reference.
+    this.lastGroundedPose={x:pos[0],z:pos[2],heading};
   }
   onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title')this.cameraMode.initial=true;}
   start(newGame=false){
@@ -97,11 +100,37 @@ class Game{
     }
   }
   cycleCamera(){const mode=this.cameraMode.next();this.save.settings.camera=mode;this.persist();this.sounds.play('click');}
-  recover(){if(!this.player)return;const p=this.player.position;
-    // Nearest grid road is safe in city; preserve nearby position outside city.
-    const x=Math.abs(p[0])<250?Math.round(p[0]/60)*60:p[0];
-    const z=Math.abs(p[2])<250?Math.round(p[2]/60)*60:p[2];
-    this.player.reset([x,terrainHeight(x,z)+2,z],this.player.yaw);this.ui.toast('Car recovered. Back on the road!');
+  recover(){if(!this.player)return;
+    const pos=this.player.position;
+    const checkpoint=this.lastGroundedPose||{x:0,z:0,heading:0};
+    // Only return the car to verified navigable roads, never a point beyond
+    // the ground mesh or inside an airport structure.
+    let x=checkpoint.x,z=checkpoint.z,heading=checkpoint.heading;
+    if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>TERRAIN_WIDTH/2-25||Math.abs(z)>TERRAIN_DEPTH/2-25){
+      x=0;z=0;heading=0;
+    }
+    this.player.reset([x,terrainHeight(x,z)+2,z],heading);
+    this.cameraMode.initial=true;
+    this.input.clear();
+    this.ui.toast('Back on the road!');
+  }
+  keepCarOnGround(){
+    if(!this.player)return;
+    const p=this.player.position,{x,y,z}={x:p[0],y:p[1],z:p[2]};
+    const inside=Math.abs(x)<TERRAIN_WIDTH/2-5&&Math.abs(z)<TERRAIN_DEPTH/2-5;
+    const ground=terrainHeight(x,z);
+    if(!inside||!Number.isFinite(y)||y<ground-3.5){
+      this.recover();
+      return;
+    }
+    // Record only navigable locations: streets or airport-access approach.
+    const nearRoad=(Math.abs(x)<=262&&Math.abs(z)<=270&&
+      (Math.abs(x-Math.round(x/60)*60)<6||Math.abs(z-Math.round(z/60)*60)<6));
+    const airportRoad=x>=260&&x<=415&&Math.abs(z+120)<8;
+    if((nearRoad||airportRoad)&&y>=ground+.25&&y<ground+3&&
+       Math.abs(this.player.body.linvel().y)<4){
+      this.lastGroundedPose={x,z,heading:this.player.yaw};
+    }
   }
   interact(){if(this.ui.screen!=='playing')return;
     if(this.player.horizontalSpeed>3.5){this.ui.toast('Slow down to pick up or drop off passengers.','warn');this.sounds.play('error');return;}
@@ -183,7 +212,7 @@ class Game{
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
-      if(this.player.position[1]<-20)this.recover();
+      this.keepCarOnGround();
     }else if(title){
       this.navigation.group.visible=false;this.navigation.beacon.visible=false;
       // Title is a stable, lightly animated postcard: no expensive physics/AI.
