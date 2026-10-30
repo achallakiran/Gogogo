@@ -218,6 +218,7 @@ class Game{
         this.player.drive(this.input,step,this.save.settings);
         this.traffic.update(step,this.player);
         this.world.step();
+        this.player.stabilizeAfterStep();
         this.player.capturePhysicsPose();
         this.accumulator-=step;substeps++;
       }

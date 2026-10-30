@@ -54,8 +54,8 @@ try {
       let maxHeight=0,maxTilt=0,maxRise=0;
       for(let i=0;i<250;i++){
         p.drive({gas:true,brake:false,left:false,right:i<90&&scenario.turn>0},1/60,g.save.settings);
-        g.world.step();p.capturePhysicsPose();
-        const body=p.body.translation(),ground=body.y-g.probeGround(body.x,body.z).toi;
+        g.world.step();p.stabilizeAfterStep();p.capturePhysicsPose();
+        const body=p.body.translation();
         // height sampling is independent from castRay, but local height is
         // near zero on the initial city straightaways.
         maxHeight=Math.max(maxHeight,body.y);

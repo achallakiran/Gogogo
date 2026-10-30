@@ -78,6 +78,13 @@ export class Vehicle{
       body.setLinvel({x:rising.x,y:4.2,z:rising.z},true);
     this.speed=forwardSpeed;
   }
+  stabilizeAfterStep(){
+    const p=this.body.translation(),ground=surfaceInfoAt(p.x,p.z).height;
+    if(p.y<ground+3.1){
+      const v=this.body.linvel();
+      if(v.y>4.2)this.body.setLinvel({x:v.x,y:4.2,z:v.z},true);
+    }
+  }
   sync(dt,alpha=1){
     const curr=this.poseCurr,prev=this.posePrev||curr;
     const pose=curr||{position:new THREE.Vector3(...this.position),rotation:new THREE.Quaternion()};
