@@ -38,6 +38,8 @@ try {
   // Verify *physics* support instead of relying on a single rendering screenshot.
   // The original airport apron/runway extended outside the heightfield, so a
   // player could drive off the physics world while standing on a visible slab.
+  // Do not sample until the game has run its first actual physics step.
+  await page.waitForFunction(()=>window.__GOGOGO_DEBUG__?.frameCount>1,null,{timeout:25000});
   const support=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__;
     const checks=[[0,0],[240,-120],[355,-123],[390,-117],[444,-220],[492,-117],[516,-240],[550,-100]]

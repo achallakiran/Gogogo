@@ -115,8 +115,12 @@ class Game{
     this.ui.toast('Back on the road!');
   }
   probeGround(x,z){
+    // Scene queries can be stale before the first physics step (especially
+    // under SwiftShader startup). Explicitly sync the Rapier query pipeline.
+    this.world.updateSceneQueries();
     const hit=this.world.castRay(new RAPIER.Ray({x,y:65,z},{x:0,y:-1,z:0}),90,true);
-    return {x,z,hit:!!hit,toi:hit?.timeOfImpact??null};
+    return {x,z,hit:!!hit,toi:hit?.timeOfImpact??null,
+      colliderCount:this.world.colliders.len()};
   }
   keepCarOnGround(){
     if(!this.player)return;
