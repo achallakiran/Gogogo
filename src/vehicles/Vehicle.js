@@ -4,6 +4,7 @@ import * as RAPIER from '@dimforge/rapier3d-compat';
 import {terrainHeight,surfaceInfoAt} from '../world/SurfaceSystem.js';
 import {steeringYawRate} from './Steering.js';
 import {longitudinalAcceleration} from './DrivingDynamics.js';
+import {suspensionAcceleration} from './Suspension.js';
 
 const clamp=THREE.MathUtils.clamp;
 const material=(c,opts={})=>new THREE.MeshStandardMaterial({color:c,roughness:.58,metalness:.15,...opts});
@@ -37,8 +38,39 @@ export class Vehicle{
   get horizontalSpeed(){const v=this.body.linvel();return Math.hypot(v.x,v.z);}
   get direction(){const q=this.body.rotation();const d=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion(q.x,q.y,q.z,q.w));d.y=0;return d.lengthSq()>.0001?d.normalize():new THREE.Vector3(0,0,-1);}
   get yaw(){const d=this.direction;return Math.atan2(-d.x,-d.z);}
+  // Four physically distinct spring-damper impulses support the chassis at
+  // wheel locations while the existing round tire colliders preserve the
+  // proven no-launch contact behaviour. Forces are deliberately bounded.
+  applyWheelSuspension(dt){
+    const body=this.body,base=body.translation(),rotation=body.rotation();
+    const q=new THREE.Quaternion(rotation.x,rotation.y,rotation.z,rotation.w);
+    const vel=body.linvel(),ang=body.angvel(),mass=body.mass();
+    const wheelMass=mass/4;
+    let grounded=0;
+    for(const w of this.model.wheels){
+      const local=new THREE.Vector3(
+        w.side*(this.spec.width*.5-.06),.31,
+        w.axle*(this.spec.length*.5-this.spec.wheel*.85)
+      ).applyQuaternion(q);
+      const x=base.x+local.x,y=base.y+local.y,z=base.z+local.z;
+      const ray=new RAPIER.Ray({x,y,z},{x:0,y:-1,z:0});
+      const hit=this.world.castRay(ray,1.63,true,
+        undefined,undefined,undefined,body);
+      if(!hit){w.springLength=1.63;w.supported=false;continue;}
+      grounded++;
+      const point={x,y,z},distance=hit.timeOfImpact;
+      // Angular velocity at this wheel contact (v + omega cross r).
+      const vy=vel.y+ang.z*local.x-ang.x*local.z;
+      const accel=suspensionAcceleration(distance,vy,1.40,18,3.8,5);
+      if(accel>0)body.applyImpulseAtPoint(
+        {x:0,y:wheelMass*accel*dt,z:0},point,true);
+      w.springLength=distance;w.supported=true;
+    }
+    this.springContactCount=grounded;
+  }
   drive(input,dt,settings){
     const body=this.body,vel=body.linvel(),spec=this.spec;
+    this.applyWheelSuspension(dt);
     const fwd=this.direction,right=new THREE.Vector3(-fwd.z,0,fwd.x);
     const forwardSpeed=vel.x*fwd.x+vel.z*fwd.z;
     const lateralSpeed=vel.x*right.x+vel.z*right.z;
@@ -120,7 +152,9 @@ export class Vehicle{
   reset(at=[0,2,0],heading=0){
     this.body.setTranslation({x:at[0],y:Math.max(terrainHeight(at[0],at[2])+2,at[1]),z:at[2]},true);
     this.body.setRotation({x:0,y:Math.sin(heading/2),z:0,w:Math.cos(heading/2)},true);
-    this.body.setLinvel({x:0,y:0,z:0},true);this.body.setAngvel({x:0,y:0,z:0},true);this.steer=0;this.speed=0;this.capturePhysicsPose(true);this.sync(.016,1);
+    this.body.setLinvel({x:0,y:0,z:0},true);this.body.setAngvel({x:0,y:0,z:0},true);this.steer=0;this.speed=0;this.springContactCount=0;
+    for(const w of this.model.wheels){w.springLength=1.63;w.supported=false;}
+    this.capturePhysicsPose(true);this.sync(.016,1);
   }
   setColor(hex){this.color=hex;this.model.paint.color.set(hex);}
   dispose(){this.scene.remove(this.model.root);this.model.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});this.world.removeRigidBody(this.body);}

@@ -39,6 +39,23 @@ try {
       surfaces:[[120,272],[120,275],[160,325],[175,390],[206,455]].map(([x,z])=>g.probeGround(x,z))};
   });
   console.log('MOUNTAIN_DISTRICT',JSON.stringify(hill));
+  const regions=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,roads=g.environment.regionalRoads;
+    const patches=roads.roads.map(r=>({
+      id:r.id,triangles:r.indices.length/3,
+      holes:r.holes.map(p=>({
+        x:p.x,z:p.z,depth:p.depth,
+        support:g.probeGround(p.x,p.z)
+      }))
+    }));
+    return {count:roads.roads.length,holeCount:roads.holeCount,patches};
+  });
+  console.log('REGIONAL_ROADS',JSON.stringify(regions));
+  assert.equal(regions.count,3);
+  assert.equal(regions.holeCount,7);
+  assert.ok(regions.patches.every(p=>p.triangles>100&&p.holes.every(h=>h.support.hit&&h.support.toi<68.5)),
+    'Mountain and country damaged roads must be physically supported: '+JSON.stringify(regions));
+
   const potholeTest=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,r=g.environment.roadDamage;
     const holes=r.potholes.map(h=>{
@@ -230,6 +247,41 @@ try {
     return {maxTilt,maxUp,maxHeight};
   });
   console.log('POTHOLE_DRIVE',JSON.stringify(damageDrive));
+  // Existing city no-jump regression still applies after spring impulses;
+  // monitor wheel-by-wheel support and rollout across country/mountain.
+  const springTrials=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,p=g.player,roads=g.environment.regionalRoads.roads;
+    const cases=[
+      {name:'alpine',route:roads[0],atIndex:3},
+      {name:'country',route:roads[2],atIndex:10}
+    ];
+    const results=[];
+    for(const c of cases){
+      const d=c.route,idx=Math.floor((c.atIndex/(c.name==='country'?20:12))*(d.rows));
+      const j=Math.min(d.rows-1,Math.max(2,idx)),stride=d.columns+1,
+        at=j*stride+Math.floor(d.columns/2),next=(j+2)*stride+Math.floor(d.columns/2);
+      const x=d.positions[at*3],z=d.positions[at*3+2],x2=d.positions[next*3],z2=d.positions[next*3+2];
+      const yaw=Math.atan2(-(x2-x),-(z2-z));
+      p.reset([x,2,z],yaw);
+      let maxTilt=0,maxRise=0,maxYAbove=0,support=0;
+      for(let i=0;i<70;i++){
+        p.drive({gas:true,brake:false,left:false,right:false},1/60,g.save.settings);
+        g.world.step();p.stabilizeAfterStep();p.capturePhysicsPose();
+        const b=p.body.translation(),r=p.body.rotation();
+        const up=1-2*(r.x*r.x+r.z*r.z);
+        maxTilt=Math.max(maxTilt,Math.acos(Math.max(-1,Math.min(1,up)))*180/Math.PI);
+        maxRise=Math.max(maxRise,p.body.linvel().y);
+        maxYAbove=Math.max(maxYAbove,b.y-(65-g.probeGround(b.x,b.z).toi));
+        if(p.springContactCount>0)support++;
+      }
+      results.push({name:c.name,maxTilt,maxRise,maxYAbove,support});
+    }
+    p.reset([0,2,0],0);
+    return results;
+  });
+  console.log('REGIONAL_SUSPENSION',JSON.stringify(springTrials));
+  assert.ok(springTrials.every(r=>r.maxTilt<36&&r.maxRise<5.5&&r.maxYAbove<6&&r.support>10),
+    'Spring-damped cars must stay grounded in both biomes: '+JSON.stringify(springTrials));
   assert.ok(damageDrive.maxTilt<36&&damageDrive.maxUp<5.5&&damageDrive.maxHeight<8,
     'Car must remain stable driving over broken road: '+JSON.stringify(damageDrive));
   const mountainDrive=await page.evaluate(()=>{

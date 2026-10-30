@@ -1,3 +1,21 @@
+### v0.3 Phase 2 — Regional worn roads and physical spring assistance
+
+Extended the damage-surface approach to **two alpine segments** and a new
+connected visual countryside feeder road west of the city. These sections use
+identical triangles for the render mesh and Rapier collision geometry, with
+seven irregular cavities in total plus low-poly landscape details.
+
+A four-corner **bounded spring-damper load-assistance system** now applies
+physical impulses at actual wheel mounts, based on raycast contact distances
+and each wheel's local vertical speed. For safety, the proven sphere-wheel
+colliders remain in place for this beta; the springs assist them rather than
+replacing tire contacts. This is a genuinely force-producing per-wheel system,
+but not yet a fully independent spring-only suspension rig.
+
+Unchanged: fixed landmark registry, garage progression, existing taxi physics
+limits, HUD and v1 save format. New alpine roads are still subject to full
+visual quality review; beach and weather belong to later milestones.
+
 ### Road damage and suspension test slice (v0.3 Phase 2)
 
 A fixed city road section near coordinates (60,90) contains three varied
