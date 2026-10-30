@@ -91,25 +91,25 @@ function buildRoads(scene){
   // North-south roads own intersection patches; east-west strips stop at
   // their edges. This removes the coplanar surfaces that visibly flicker.
   for(const x of xlines){
-    strip(scene,'z',x,-273,273,15.5,curbMat,.060);
-    strip(scene,'z',x,-272,272,12.5,roadMat,.043);
+    strip(scene,'z',x,-273,273,15.5,curbMat,.055);
+    strip(scene,'z',x,-272,272,12.5,roadMat,.087);
   }
   for(const z of zlines){
     const end=z===-120?405:272;
     for(const [start,stop] of roadSegments(xlines,-272,end,7.75)){
-      strip(scene,'x',z,start,stop,15.5,curbMat,.060);
+      strip(scene,'x',z,start,stop,15.5,curbMat,.055);
     }
     for(const [start,stop] of roadSegments(xlines,-271,end,6.25)){
-      strip(scene,'x',z,start,stop,12.5,(z===-120&&start>=246)?roadAlt:roadMat,.043);
+      strip(scene,'x',z,start,stop,12.5,(z===-120&&start>=246)?roadAlt:roadMat,.087);
     }
   }
   for(const x of [-240,-180,-120,-60,0,60,120,180,240]){
-    for(let z=-258;z<=258;z+=9){if(zlines.some(c=>Math.abs(c-z)<13))continue;box(scene,x,terrainHeight(x,z)+.073,z,.24,.012,4.2,white,false);}
+    for(let z=-258;z<=258;z+=9){if(zlines.some(c=>Math.abs(c-z)<13))continue;box(scene,x,terrainHeight(x,z)+.116,z,.24,.012,4.2,white,false);}
   }
-  for(const z of zlines){for(let x=-257;x<=(z===-120?390:258);x+=9){if(xlines.some(c=>Math.abs(c-x)<13))continue;box(scene,x,terrainHeight(x,z)+.073,z,4.2,.012,.24,white,false);}}
+  for(const z of zlines){for(let x=-257;x<=(z===-120?390:258);x+=9){if(xlines.some(c=>Math.abs(c-x)<13))continue;box(scene,x,terrainHeight(x,z)+.116,z,4.2,.012,.24,white,false);}}
   // pedestrian zebra crossings around the central plaza
   for(const [x,z] of [[0,0],[60,-60],[-60,60],[180,-120],[-120,-120]]){
-    for(let i=0;i<6;i++){box(scene,x-5+i*2,terrainHeight(x-5+i*2,z+10)+.074,z+10,1.05,.015,3.2,white,false);}
+    for(let i=0;i<6;i++){box(scene,x-5+i*2,terrainHeight(x-5+i*2,z+10)+.117,z+10,1.05,.015,3.2,white,false);}
   }
   // Street traffic lights on concrete islands
   const pole=MAT('#27374c'),red=MAT('#eb6664',{emissive:'#9f1f1d',emissiveIntensity:.3}),green=MAT('#67e1a1',{emissive:'#178c4b',emissiveIntensity:.2});

@@ -28,8 +28,8 @@ export function roadDamageHeight(x,z){
  const fade=smooth(dx/1.9)*smooth(dz/6.4);
  const {depth}=craterAt(x,z);
  // The pre-existing lower terrain serves as a safety net. At the pothole
- // bottom, the mesh remains above it; edges meet the old road at +0.045.
- return terrainHeight(x,z)+.045+fade*(.285-depth);
+ // bottom, the mesh remains above it; edges meet the visible asphalt at +0.103.
+ return terrainHeight(x,z)+.103+fade*(.285-depth);
 }
 export function roadDamageGeometry(cols=36,rows=116){
  const s=DAMAGE_SECTION;

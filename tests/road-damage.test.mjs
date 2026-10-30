@@ -26,7 +26,7 @@ test('safe blended asphalt transitions with no sharp launch lip',()=>{
  for(const edgeZ of [z-length/2,z+length/2]){
   for(let i=0;i<=20;i++){
    const atX=x-width/2+width*i/20;
-   assert.ok(Math.abs(roadDamageHeight(atX,edgeZ)-terrainHeight(atX,edgeZ)-.045)<.00001);
+   assert.ok(Math.abs(roadDamageHeight(atX,edgeZ)-terrainHeight(atX,edgeZ)-.103)<.00001);
   }
  }
  let slope=0;
@@ -46,4 +46,10 @@ test('one deterministic triangle set supplies both render and collider',()=>{
  const ux=a.positions[j*3]-a.positions[i*3],uz=a.positions[j*3+2]-a.positions[i*3+2];
  const vx=a.positions[k*3]-a.positions[i*3],vz=a.positions[k*3+2]-a.positions[i*3+2];
  assert.ok(uz*vx-ux*vz>0,'triangle front face points upward');
+});
+
+test('damaged-road edge stays just above ordinary asphalt and below lane markings',()=>{
+ const h=roadDamageHeight(DAMAGE_SECTION.x,DAMAGE_SECTION.z-DAMAGE_SECTION.length/2);
+ const base=terrainHeight(DAMAGE_SECTION.x,DAMAGE_SECTION.z-DAMAGE_SECTION.length/2);
+ assert.ok(h-base>.087&&h-base<.116);
 });
