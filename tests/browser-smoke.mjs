@@ -200,6 +200,20 @@ try {
   console.log('MOUNTAIN_VIEW',JSON.stringify(mountainView));
   assert.ok(mountainView.at[1]>10,'Hill preview camera must stand on elevated terrain');
   await page.screenshot({path:'game-mountain-smoke.png',timeout:18000});
+  // Visual QA of the physical pothole section from the actual driving camera.
+  await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    g.player.reset([60,2,111],0);
+    g.player.capturePhysicsPose(true);
+    g.player.sync(.016,1);
+    g.cameraMode.initial=true;
+    g.cameraMode.setMode('chase');
+    g.cameraMode.update(g.player,.016);
+    g.navigation.group.visible=false;
+    g.renderer.render(g.scene,g.camera);
+  });
+  await page.screenshot({path:'game-road-damage-smoke.png',timeout:18000});
+
   const damageDrive=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,p=g.player;
     p.reset([60,2,108],0);

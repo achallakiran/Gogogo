@@ -49,6 +49,7 @@ jobs:
             game-title-smoke.png
             game-driving-smoke.png
             game-mountain-smoke.png
+            game-road-damage-smoke.png
             game-mobile-passenger-smoke.png
             browser-smoke-failure.png
           if-no-files-found: ignore
