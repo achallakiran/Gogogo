@@ -35,9 +35,15 @@ try {
   assert.deepEqual(controls.map(c=>c.name),['left','right','brake','gas']);
   assert.ok(controls.every(c=>c.svg===1&&c.text===''&&c.selectable==='none'),JSON.stringify(controls));
   assert.equal(await page.locator('.hud-icon svg').count(),3);
-  await page.locator('[data-drive="left"]').evaluate(el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:8,isPrimary:true})));
-  assert.ok(await page.locator('[data-drive="left"]').evaluate(el=>el.classList.contains('down')));
-  await page.locator('[data-drive="left"]').evaluate(el=>el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:8,isPrimary:true})));
+  // Exercise a real pointer press: synthetic PointerEvents do not acquire
+  // browser pointer capture and would fail the game's setPointerCapture call.
+  await page.locator('.touch-pad').evaluate(el=>{el.style.display='flex';});
+  const steerLeft=page.locator('[data-drive="left"]');
+  await steerLeft.hover();
+  await page.mouse.down();
+  assert.ok(await steerLeft.evaluate(el=>el.classList.contains('down')),'Hold should highlight steering button');
+  await page.mouse.up();
+  assert.ok(!(await steerLeft.evaluate(el=>el.classList.contains('down'))),'Release should clear the button');
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
   console.log('Browser smoke PASSED: title, WebGL/WASM startup, playable HUD.');
 } catch(e) {
