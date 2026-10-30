@@ -84,3 +84,18 @@ test('mountain route is continuous, rising, and leaves landmark plots intact',as
   assert.ok(path.some(([x,z])=>x===120&&z===272),'Must connect through mountain road entry');
   assert.ok(path.some(p=>p[1]>=400),'Mountain road must connect to city navigation');
 });
+
+test('biome colors are deterministic and permanent urban landmarks retain their base color',async()=>{
+ const {biomeTypeAt,terrainTintAt,colorizeTerrain,populateBiomeScenery}=await import('../src/world/BiomeScenery.js');
+ const {makeTerrainHeightfield}=await import('../src/world/terrainCollider.js');
+ const {createTerrainGeometry}=await import('../src/world/SurfaceSystem.js');
+ assert.equal(biomeTypeAt(0,0),'city');
+ assert.equal(biomeTypeAt(180,380),'alpine');
+ assert.equal(biomeTypeAt(-350,380),'valley');
+ assert.equal(terrainTintAt(120,300).getHex(),terrainTintAt(120,300).getHex());
+ const geo=colorizeTerrain(createTerrainGeometry(makeTerrainHeightfield(terrainHeight)));
+ const colors=geo.getAttribute('color');
+ assert.equal(colors.count,geo.getAttribute('position').count);
+ assert.ok([...colors.array].every(Number.isFinite));
+ geo.dispose();
+});

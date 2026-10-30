@@ -51,6 +51,26 @@ try {
     return {count:roads.roads.length,holeCount:roads.holeCount,patches};
   });
   console.log('REGIONAL_ROADS',JSON.stringify(regions));
+  const biomeStats=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,s=g.environment.biomes;
+    const validMaterials=Object.values(s.meshes).every(mesh=>!mesh||mesh.count>0);
+    const ground=g.scene.children.find(m=>m.isMesh&&m.geometry?.getAttribute('position')?.count===
+      (133*101)&&m.geometry.getAttribute('color'));
+    return {counts:s.counts,background:s.background.length,
+      obstacles:s.obstacleCount,meshCount:Object.keys(s.meshes).length,
+      groundColors:!!ground,validMaterials,
+      samples:[[150,340],[205,455],[-360,350]].map(([x,z])=>g.probeGround(x,z))};
+  });
+  console.log('BIOME_SCENERY',JSON.stringify(biomeStats));
+  assert.ok(biomeStats.counts.conifers>50&&biomeStats.counts.broadleaf>30,
+    'Alpine and countryside vegetation must be present: '+JSON.stringify(biomeStats));
+  assert.ok(biomeStats.counts.outcrops>35&&biomeStats.obstacles>5,
+    'Faceted cliff rock and collidable near-road obstacles required: '+JSON.stringify(biomeStats));
+  assert.equal(biomeStats.background,3);
+  assert.ok(biomeStats.groundColors&&biomeStats.validMaterials);
+  assert.ok(biomeStats.samples.every(p=>p.hit&&p.toi<70),
+    'Ground under biomes must remain collidable: '+JSON.stringify(biomeStats));
+
   assert.equal(regions.count,3);
   assert.equal(regions.holeCount,7);
   assert.ok(regions.patches.every(p=>p.triangles>100&&p.holes.every(h=>h.support.hit&&h.support.toi<68.5)),

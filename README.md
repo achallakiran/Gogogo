@@ -1,3 +1,24 @@
+### v0.3 Phase 2 — Environmental art pass
+
+The Pinecrest and countryside areas now use deterministic alpine vs valley
+biomes, shaded terrain vertex colors, layered faceted distant ridgelines,
+instanced pine and broadleaf trees, shrubs, wildflowers, meadow grass,
+boulders and layered cliff outcrops. Large nearby trees/rocks receive fixed
+Rapier collision shapes. Mountain gravel and rural wheel-rut surface colors
+are varied without changing or relocating permanent landmark assets.
+
+The decorative distant mountain layers lie outside the playable heightfield:
+they are backdrops, **not** roads or drivable geometry. Native ground support
+continues to use the same sampled heightfield as visual terrain.
+
+### Future UI/visual polish
+
+The kids' driving HUD stays deliberately spare. A dedicated following
+milestone will redesign the title/menu, garage car previews, transitions,
+icon consistency and game-wide art direction, while preserving mobile
+control spacing. Wet-road material changes, rain/wind and the coastline are
+separate later steps.
+
 ### v0.3 Phase 2 — Regional worn roads and physical spring assistance
 
 Extended the damage-surface approach to **two alpine segments** and a new

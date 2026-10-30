@@ -12,6 +12,7 @@ import {makeTerrainHeightfield} from './terrainCollider.js';
 import {populateMountainDistrict} from './MountainDistrict.js';
 import {populateRoadDamage} from './RoadDamage.js';
 import {populateRegionalRoads} from './RegionalRoads.js';
+import {colorizeTerrain,populateBiomeScenery} from './BiomeScenery.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -59,8 +60,9 @@ function colliderBox(physics,x,y,z,w,h,d){if(!physics)return;const rb=physics.cr
 
 function terrain(scene,physics){
   const sampleGrid=makeTerrainHeightfield(terrainHeight);
-  const g=createTerrainGeometry(sampleGrid);
-  const m=new THREE.Mesh(g,grass);m.receiveShadow=true;scene.add(m);
+  const g=colorizeTerrain(createTerrainGeometry(sampleGrid));
+  const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true}));
+  m.receiveShadow=true;scene.add(m);
   if(physics)attachTerrainCollider(physics,RAPIER,terrainHeight,sampleGrid);
 }
 // Keep adjacent street strips out of overlapping intersection polygons.
@@ -243,7 +245,8 @@ export function createWorld(scene,physics){
   const mountain=populateMountainDistrict(scene,physics);
   const roadDamage=populateRoadDamage(scene,physics,RAPIER);
   const regionalRoads=populateRegionalRoads(scene,physics,RAPIER);
+  const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,biomes,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

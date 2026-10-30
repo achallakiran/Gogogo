@@ -78,10 +78,22 @@ export function regionalRoadGeometry(region,columns=22){
    const elevation=shoulder+fade*(.25-damage.dip);
    const y=terrainHeight(x,z)+elevation;
    positions.push(x,y,z);
+   const wear=.5+.5*Math.sin(i*.83+j*.29)*Math.cos(i*.12-j*.75);
    current.copy(asphalt).lerp(old,clamp(.08+.65*damage.rim+
-     .035*Math.sin(i*4.7+j*2.3)));
+     .11*wear));
    current.lerp(soil,clamp(damage.dip/.24*.75));
-   if(Math.abs(lateral)>region.halfWidth-.7)current.lerp(old,.5);
+   const shoulderWear=smooth((Math.abs(lateral)-region.halfWidth+1.65)/1.65);
+   current.lerp(old,.53*shoulderWear);
+   if(region.type==='country'){
+     const rut=Math.min(Math.abs(lateral-1.25),Math.abs(lateral+1.25));
+     const ruts=(1-smooth(rut/.65))*(.54+.46*Math.sin(i*.38)**2);
+     current.lerp(soil,ruts*.34);
+     if(Math.sin(i*.17+j*.62)>.87)current.lerp(old,.13);
+   }else if(damage.rim<.09){
+     // More believable patchwork rather than evenly repeated road colours.
+     const repaired=(Math.sin(i*.24+j*.11)>.83&&Math.cos(i*.17-j*.53)>.35);
+     if(repaired)current.lerp(old,.17);
+   }
    colors.push(current.r,current.g,current.b);
    if(i<rows&&j<columns){
     const a=i*(columns+1)+j,b=a+1,c=a+columns+1,d=c+1;
