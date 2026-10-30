@@ -18,6 +18,7 @@ import {populateCoastalRoad} from './CoastalRoad.js';
 import {populateWorldDensity} from './WorldDensity.js';
 import {populateRoadsideBoundaries} from './RoadsideBoundaries.js';
 import {populateSettlements} from './Settlements.js';
+import {populateAirportAtmosphere} from './AirportAtmosphere.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -213,9 +214,24 @@ function airport(scene,physics){
     box(p,0,-.6,-12,2,.5,5,MAT('#e9f0f6'));
     for(const side of [-1,1]){const eng=cyl(p,side*7,-2,-2,1.5,1.4,3.6,MAT('#52697c'),8);eng.rotation.x=Math.PI/2;}
   }
-  // terminal overpass and destination dropoff marker
-  box(scene,370,.13,-125,35,.22,22,MAT('#7c94a0'),false);
-  sign(scene,'AIRPORT DROP-OFF',363,7,-133,15,'#176b74');
+  // Ground-level curbside taxi arrivals: no isolated shed or floating overpass.
+  // The taxi lane stays clear; only its pedestrian side owns solid bollards.
+  const curb=MAT('#b2b9b7'),walk=MAT('#d5d7c8'),yellow=MAT('#f6cf73');
+  box(scene,397,.13,-120,4,.26,48,walk,false);
+  box(scene,395,.21,-120,.32,.18,48,yellow,false);
+  for(let z=-139;z<=-101;z+=8){
+    cyl(scene,399,.72,z,.22,.27,1.44,MAT('#46636d'),7);
+    box(scene,397,.40,z,3,.05,.25,MAT('#eff4e6'),false);
+  }
+  // Glass-fronted landside entrance and an architectural canopy above the sidewalk.
+  box(scene,404,5.4,-90,25,10.8,2,glass,false);
+  box(scene,405,11.1,-101,28,.65,23,MAT('#e9f0ea'),false);
+  for(const z of [-111,-90])for(const x of [395,416]){
+    cyl(scene,x,5.6,z,.3,.34,10.6,terminal,6);
+  }
+  sign(scene,'SKYPORT · DEPARTURES',394,9,-90,19,'#24516e',-Math.PI/2);
+  sign(scene,'TAXI DROP-OFF',400,3.4,-118,11,'#176b74',-Math.PI/2);
+  // The canopy's roof and distant columns stay outside the drivable taxi lane.
   // runway approach lights
   for(let z=-226;z<5;z+=21)for(const x of [476,508]){cyl(scene,x,.36,z,.3,.3,.65,MAT('#e6ecf7',{emissive:'#68cfef',emissiveIntensity:.8}),6);}
 }
@@ -256,7 +272,8 @@ export function createWorld(scene,physics){
   const roadsideBoundaries=populateRoadsideBoundaries(scene,physics,RAPIER);
   const settlements=populateSettlements(scene,physics,RAPIER);
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
+  const airportAtmosphere=populateAirportAtmosphere(scene);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,roadsideBoundaries,settlements,biomes,terrainPatch,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,roadsideBoundaries,settlements,biomes,airportAtmosphere,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

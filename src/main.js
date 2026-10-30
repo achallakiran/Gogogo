@@ -225,12 +225,14 @@ class Game{
       this.player.sync(dt,Math.min(1,this.accumulator/step));
       this.missions.update(this.t,this.player,dt);
       this.environment?.streetLife?.update(this.player,dt,this.t);
+      this.environment?.airportAtmosphere?.update(this.t);
       this.navigation.update(this.player,this.missions.target(this.player.position,this.player.spec.capacity),this.t);
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
       this.keepCarOnGround();
     }else if(title){
+      this.environment?.airportAtmosphere?.update(this.t);
       this.navigation.group.visible=false;this.navigation.beacon.visible=false;
       // Title is a stable, lightly animated postcard: no expensive physics/AI.
       this.accumulator=0;
