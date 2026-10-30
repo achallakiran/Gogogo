@@ -26,3 +26,10 @@ test('navigation reads left/right relative to a north-facing player',()=>{
   let hint=getNextTurn([0,0],[[30,-30]],0);
   assert.equal(hint.direction,'RIGHT');
 });
+
+test('route HUD shows ARRIVED at a passenger rather than U-TURN',()=>{
+ const route=planRoadRoute([0,0],[5,-75]);
+ const hint=getNextTurn([5,-75],route,Math.PI);
+ assert.equal(hint.direction,'ARRIVED');
+ assert.equal(hint.remaining,0);
+});

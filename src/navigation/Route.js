@@ -63,6 +63,10 @@ export function planRoadRoute(start,target){
 }
 export function getNextTurn(current,route,yaw){
   if(!route.length)return null;
+  const goal=route[route.length-1];
+  if(distance(current,goal)<9){
+    return {next:goal,relative:0,direction:'ARRIVED',turnDistance:0,remaining:0};
+  }
   let index=0;
   while(index<route.length-1&&distance(current,route[index])<13)index++;
   const next=route[index];
