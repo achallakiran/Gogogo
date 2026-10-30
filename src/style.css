@@ -80,3 +80,46 @@
  .hud-objective .objective-line{font-size:10px}
  .hud-objective .objective-distance{font-size:9px}
 }
+
+/* v0.2.1 input ergonomics: the speed readout lives IN the free space between
+   the two pedal clusters, while the passenger action sits higher at the side. */
+@media(pointer:coarse){
+ #hud .hud-speed{
+   position:absolute;left:50%;right:auto;
+   bottom:max(10px,env(safe-area-inset-bottom));
+   transform:translateX(-50%);
+   width:94px;min-width:0;
+   padding:7px 8px;
+   align-items:center;
+   border-radius:12px;
+   pointer-events:none;
+ }
+ #hud .hud-speed b{font-size:30px}
+ #hud .hud-speed span{font-size:8px}
+ #hud .hud-speed #camera-label{font-size:7px;margin-top:3px;padding-top:3px}
+ #hud .interact-prompt{
+   position:absolute;
+   left:auto;
+   right:max(10px,env(safe-area-inset-right));
+   bottom:clamp(126px,33vh,230px);
+   transform:none;
+   z-index:6;
+   min-width:76px;
+ }
+ #hud .interact-button{width:50px;height:50px}
+ #hud .interact-caption{font-size:9px;white-space:normal;max-width:120px;text-align:center}
+}
+@media(pointer:coarse) and (max-width:470px){
+ #hud .interact-prompt{right:12px;bottom:clamp(130px,31vh,240px)}
+}
+#fullscreen-help{
+ position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ z-index:40;width:min(380px,calc(100vw - 40px));
+ padding:20px;border-radius:18px;
+ border:1px solid #b8eae5a0;
+ background:linear-gradient(145deg,#16384df5,#102132f5);
+ box-shadow:0 15px 65px #0009;pointer-events:auto;
+}
+#fullscreen-help h3{font-size:16px;color:#f9d487;letter-spacing:.09em}
+#fullscreen-help p{font-size:13px;line-height:1.65;color:#ecf5f4;margin:10px 0 16px}
+#fullscreen-help button{padding:11px 22px;background:#eac37c;color:#203643;border:0;border-radius:10px;font-weight:900}

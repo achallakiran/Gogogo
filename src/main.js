@@ -63,7 +63,6 @@ class Game{
   }
   onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title')this.cameraMode.initial=true;}
   start(newGame=false){
-    this.toggleFullscreen(true);
     if(newGame){const settings={...this.save.settings};this.save=DEFAULT_SAVE();this.save.settings=settings;this.missions.cancel();}
     const p=this.save.position;
     this.spawnPlayer(this.save.hasPlayed?[p[0],Math.max(p[1],terrainHeight(p[0],p[2])+2),p[2]]:[0,2,0],this.save.heading||0);
@@ -73,11 +72,29 @@ class Game{
   pause(){if(this.ui.screen!=='playing')return;this.persist();this.ui.go('paused','playing');}
   resume(){this.ui.go('playing','paused');this.input.clear();this.cameraMode.initial=true;}
   toTitle(){this.persist();this.missions.cancel();this.ui.toTitle();}
-  toggleFullscreen(force=false){
-    if(!document.fullscreenElement && (force || this.ui.screen==='playing')){
-      const elem=document.documentElement;const fn=elem.requestFullscreen||elem.webkitRequestFullscreen;
-      if(fn){try{const promise=fn.call(elem,{navigationUI:'hide'});promise?.catch(()=>{});}catch{}}
-    }else if(!force&&document.fullscreenElement){document.exitFullscreen?.().catch?.(()=>{});}
+  async toggleFullscreen(force=false){
+    const nativeFull=document.fullscreenElement||document.webkitFullscreenElement;
+    if(nativeFull){
+      if(force)return;
+      try{
+        const close=document.exitFullscreen||document.webkitExitFullscreen;
+        await close?.call(document);
+      }catch(err){this.ui.toast('Unable to exit fullscreen on this browser.','warn');}
+      return;
+    }
+    const elem=document.documentElement,open=elem.requestFullscreen||elem.webkitRequestFullscreen;
+    if(!open){
+      if(!force)this.ui.showFullscreenHelp();
+      return;
+    }
+    try{
+      await open.call(elem);
+      this.resize();
+    }catch(err){
+      // On iOS Safari arbitrary elements cannot enter native fullscreen.
+      // An explicit, useful fallback is better than a silent no-op.
+      if(!force)this.ui.showFullscreenHelp();
+    }
   }
   cycleCamera(){const mode=this.cameraMode.next();this.save.settings.camera=mode;this.persist();this.sounds.play('click');}
   recover(){if(!this.player)return;const p=this.player.position;
@@ -158,7 +175,8 @@ class Game{
         this.accumulator-=step;substeps++;
       }
       this.player.sync(dt,Math.min(1,this.accumulator/step));
-      this.missions.update(this.t);
+      this.missions.update(this.t,this.player,dt);
+      this.environment?.streetLife?.update(this.player,dt,this.t);
       this.navigation.update(this.player,this.missions.target(this.player.position),this.t);
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}

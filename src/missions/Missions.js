@@ -12,7 +12,7 @@ function person(scene,x,z,index){
   const marker=new THREE.Mesh(new THREE.TorusGeometry(1.8,.18,8,28),new THREE.MeshBasicMaterial({color:'#ffd46c',transparent:true,opacity:.92}));
   marker.rotation.x=Math.PI/2;marker.position.y=3.5;o.add(marker);
   const light=new THREE.PointLight('#ffde78',1.4,12);light.position.y=3.1;o.add(light);
-  return {group:o,marker};
+  return {group:o,marker,body:personBody,jumpStarted:-100,cooldown:0,dirX:0,dirZ:0};
 }
 export class Missions{
   constructor(scene){this.scene=scene;this.pickups=PICKUPS.map((data,i)=>({...data,visual:person(scene,...data.pos,i)}));this.active=null;this.lastPickup=null;
@@ -46,8 +46,27 @@ export class Missions{
     return {type:'picked',mission:p};
   }
   cancel(){this.active=null;this.dropMarker.visible=false;this.pickups.forEach(p=>p.visual.group.visible=true);}
-  update(time){
-    this.pickups.forEach((p,i)=>{p.visual.marker.position.y=3.45+Math.sin(time*2+i)*.17;p.visual.marker.rotation.z=time*.9;});
+  update(time,player,dt=1/60){
+    const car=player?.position,speed=player?.horizontalSpeed||0;
+    this.pickups.forEach((p,i)=>{
+      const v=p.visual;
+      v.marker.position.y=3.45+Math.sin(time*2+i)*.17;
+      v.marker.rotation.z=time*.9;
+      v.cooldown=Math.max(0,v.cooldown-dt);
+      if(car&&v.group.visible&&speed>2&&v.cooldown===0){
+        const dx=p.pos[0]-car[0],dz=p.pos[1]-car[2],d=Math.hypot(dx,dz);
+        if(d<8){v.jumpStarted=time;v.cooldown=2.6;v.dirX=(dx/(d||1)||1);v.dirZ=dz/(d||1);}
+      }
+      const elapsed=time-v.jumpStarted;
+      if(elapsed>=0&&elapsed<.9){
+        const u=elapsed/.9;
+        v.body.position.set(v.dirX*4.5*u,Math.sin(u*Math.PI)*2.7,v.dirZ*4.5*u);
+        v.body.rotation.z=Math.sin(u*Math.PI)*.28;
+      }else{
+        v.body.position.lerp(new THREE.Vector3(),Math.min(1,dt*1.7));
+        v.body.rotation.z*=Math.max(0,1-dt*5);
+      }
+    });
     this.dropMarker.rotation.y=time*.32;
   }
 }

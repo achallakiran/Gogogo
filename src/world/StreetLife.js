@@ -125,14 +125,15 @@ export function populateStreetLife(scene,heightAt){
  const shrubs=[0,1,2].map(i=>template('shrub'+i,()=>shrub(i)));
  const awnings=[0,1,2,3].map(i=>template('awning'+i,()=>awning(i)));
  let people=0,kiosks=0,furniture=0;
+ const walkers=[];
+ const recordPerson=(id,x,z,heading=0,scale=1)=>walkers.push({variant:id%12,x,z,homeX:x,homeZ:z,heading,scale,jump:0,velX:0,velZ:0,cooldown:0});
  for(let i=-4;i<=3;i++)for(let j=-4;j<=3;j++){
    const cx=i*60+30,cz=j*60+30,central=Math.abs(cx)<165&&Math.abs(cz)<165;
    // The block margins are sidewalk space, deliberately outside the 15.5m roadway.
    for(const [dx,dz] of [[-20,-20],[20,-20],[-20,20],[20,20]]){
      const x=cx+dx+(rand()-.5)*2,z=cz+dz+(rand()-.5)*2;
      if(central||rand()<.55){
-       const person=makeVoxelPedestrian(Math.floor(rand()*12));
-       add(scene,person,x,z,heightAt(x,z),rand()*6.28,.87+rand()*.17);people++;
+       recordPerson(Math.floor(rand()*12),x,z,rand()*6.28,.87+rand()*.17);people++;
      }
    }
    if(central){
@@ -145,7 +146,7 @@ export function populateStreetLife(scene,heightAt){
      if((i+j)%3===0){
        const x=cx+(rand()-.5)*12,z=cz+16;
        add(scene,stalls[(i+j+32)%4],x,z,heightAt(x,z),0);kiosks++;
-       add(scene,makeVoxelPedestrian((i-j+24)%12),x+3,z+2.6,heightAt(x+3,z+2.6),Math.PI);people++;
+       recordPerson((i-j+24)%12,x+3,z+2.6,Math.PI);people++;
      }
      if((i-j)%4===0){
        const x=cx+3,z=cz-18;
@@ -157,5 +158,63 @@ export function populateStreetLife(scene,heightAt){
      }
    }
  }
- return {people,kiosks,furniture};
+ // Twelve palette-specific variants, 1 draw call each. Animation updates
+ // instance matrices rather than hundreds of separate Three.js scene nodes.
+ const groups=[];
+ for(let variant=0;variant<12;variant++){
+   const members=walkers.filter(w=>w.variant===variant);
+   if(!members.length)continue;
+   const source=makeVoxelPedestrian(variant);
+   const mesh=new THREE.InstancedMesh(source.geometry,mat,members.length);
+   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+   mesh.frustumCulled=false;mesh.castShadow=false;
+   mesh.receiveShadow=true;scene.add(mesh);
+   groups.push({mesh,members});
+ }
+ const tmp=new THREE.Object3D();
+ function update(player,dt,time){
+   if(!player)return;
+   const car=player.position,carSpeed=player.horizontalSpeed;
+   for(const group of groups){
+     for(let i=0;i<group.members.length;i++){
+       const p=group.members[i],dx=p.x-car[0],dz=p.z-car[2],dist2=dx*dx+dz*dz;
+       p.cooldown=Math.max(0,p.cooldown-dt);
+       if(dist2<90&&carSpeed>1.6&&p.cooldown===0){
+         const len=Math.sqrt(dist2)||1;
+         p.velX=(dx/len||1)*8.5;p.velZ=(dz/len||.3)*8.5;
+         p.jump=.0001;p.cooldown=2.7;
+         p.heading=Math.atan2(p.velX,p.velZ);
+       }
+       let hop=0,tilt=0;
+       if(p.jump>0){
+         p.jump+=dt;
+         const phase=Math.min(1,p.jump/.82);
+         hop=Math.sin(Math.PI*phase)*2.65;
+         tilt=Math.sin(Math.PI*phase)*.35;
+         p.x+=p.velX*dt*(1-phase*.55);
+         p.z+=p.velZ*dt*(1-phase*.55);
+         if(phase>=1)p.jump=0;
+       }else if(p.cooldown===0 && dist2>225){
+         // Slow recovery towards a home location when the car leaves.
+         p.x+=(p.homeX-p.x)*Math.min(dt*.4,1);
+         p.z+=(p.homeZ-p.z)*Math.min(dt*.4,1);
+       }
+       tmp.position.set(p.x,heightAt(p.x,p.z)+hop,p.z);
+       tmp.rotation.set(0,p.heading,tilt);
+       tmp.scale.setScalar(p.scale);
+       tmp.updateMatrix();group.mesh.setMatrixAt(i,tmp.matrix);
+     }
+     group.mesh.instanceMatrix.needsUpdate=true;
+   }
+ }
+ update(null,0,0);
+ // Set the initial instance transforms before the first playing frame.
+ for(const group of groups)for(let i=0;i<group.members.length;i++){
+   const p=group.members[i];
+   tmp.position.set(p.x,heightAt(p.x,p.z),p.z);
+   tmp.rotation.set(0,p.heading,0);tmp.scale.setScalar(p.scale);
+   tmp.updateMatrix();group.mesh.setMatrixAt(i,tmp.matrix);
+   group.mesh.instanceMatrix.needsUpdate=true;
+ }
+ return {people,kiosks,furniture,update,pedestrians:walkers};
 }
