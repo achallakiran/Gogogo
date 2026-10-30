@@ -8,12 +8,14 @@ export const distance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
 // The graph is built from authored roads, not from visual-only shortcuts.
 // Grid intersections are connected only to their immediate neighbours.
 import {COUNTRY_SAMPLES} from '../world/RegionalRoads.js';
+import {COAST_SAMPLES} from '../world/CoastalRoad.js';
 const COUNTRY_NODES=COUNTRY_SAMPLES.map(p=>[p.x,p.z]);
+const COAST_NODES=COAST_SAMPLES.map(p=>[p.x,p.z]);
 const CITY_NODES=GRID.flatMap(x=>GRID.map(z=>[x,z]));
 const AIRPORT_NODES=AIRPORT_SPUR.map(x=>[x,-120]);
 const MOUNTAIN_NODES=MOUNTAIN_CONTROL_POINTS.map(p=>[...p]);
 const CONNECTOR=[[120,240],[120,272]];
-const NODES=[...CITY_NODES,...AIRPORT_NODES,...MOUNTAIN_NODES,...CONNECTOR,...COUNTRY_NODES];
+const NODES=[...CITY_NODES,...AIRPORT_NODES,...MOUNTAIN_NODES,...CONNECTOR,...COUNTRY_NODES,...COAST_NODES];
 const graph=new Map();
 function connect(a,b){
  const ak=key(a),bk=key(b);
@@ -30,7 +32,8 @@ connect([300,-120],[360,-120]);
 for(let i=1;i<MOUNTAIN_NODES.length;i++)connect(MOUNTAIN_NODES[i-1],MOUNTAIN_NODES[i]);
 connect(CONNECTOR[0],CONNECTOR[1]);
 for(let i=1;i<COUNTRY_NODES.length;i++)connect(COUNTRY_NODES[i-1],COUNTRY_NODES[i]);
-export const ROAD_GRAPH_STATS=Object.freeze({nodes:NODES.length,edges:[...graph.values()].reduce((n,m)=>n+m.size,0)/2,countrysideNodes:COUNTRY_NODES.length});
+for(let i=1;i<COAST_NODES.length;i++)connect(COAST_NODES[i-1],COAST_NODES[i]);
+export const ROAD_GRAPH_STATS=Object.freeze({nodes:NODES.length,edges:[...graph.values()].reduce((n,m)=>n+m.size,0)/2,countrysideNodes:COUNTRY_NODES.length,coastalNodes:COAST_NODES.length});
 export function nearestNode(pos){
  let best=NODES[0],distanceBest=Infinity;
  for(const n of NODES){const d=distance(pos,n);if(d<distanceBest){best=n;distanceBest=d;}}

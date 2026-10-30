@@ -14,6 +14,7 @@ import {populateRoadDamage} from './RoadDamage.js';
 import {populateRegionalRoads} from './RegionalRoads.js';
 import {colorizeTerrain,populateBiomeScenery} from './BiomeScenery.js';
 import {attachMountainCollisionPatch} from './MountainSurfacePatch.js';
+import {populateCoastalRoad} from './CoastalRoad.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -247,8 +248,9 @@ export function createWorld(scene,physics){
   const mountain=populateMountainDistrict(scene,physics);
   const roadDamage=populateRoadDamage(scene,physics,RAPIER);
   const regionalRoads=populateRegionalRoads(scene,physics,RAPIER);
+  const coastalRoad=populateCoastalRoad(scene,physics,RAPIER);
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,biomes,terrainPatch,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,biomes,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }
