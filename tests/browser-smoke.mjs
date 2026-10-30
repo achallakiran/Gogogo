@@ -19,10 +19,23 @@ try {
   }
   const startup=page.locator('.startup-error');
   if(await startup.count())throw new Error('Game startup error: '+(await startup.innerText()).slice(0,1800));
+  await page.screenshot({path:'game-title-smoke.png',timeout:15000});
   await page.locator('[data-action="new-game"]').first().click();
   await page.locator('#hud').waitFor({timeout:10000});
   await page.waitForTimeout(800);
   assert.ok(await page.locator('#game canvas').count()>0,'Expected rendered canvas');
+  assert.ok(await page.locator('#route-arrow svg').count()>0,'Expected GPS route arrow');
+  assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');
+  await page.waitForTimeout(450);
+  const guidance=(await page.locator('#route-turn').innerText()).trim();
+  assert.ok(guidance.length>0&&guidance!=='FIND A RIDE','Route planner should guide to a pickup; got '+guidance);
+  await page.keyboard.down('w');
+  await page.waitForTimeout(1950);
+  await page.keyboard.up('w');
+  const speed=Number((await page.locator('#speed').innerText()).trim());
+  assert.ok(Number.isFinite(speed)&&speed>10,'Holding accelerate should move the car; speed='+speed+' km/h');
+  await page.screenshot({path:'game-driving-smoke.png',timeout:15000});
+
   // Mobile controls must be SVG-only, selectable text is forbidden, and
   // pointer press must still register for the driving input mapper.
   const controls=await page.locator('.touch-pad [data-drive]').evaluateAll(btns=>btns.map(btn=>({

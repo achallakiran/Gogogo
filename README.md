@@ -1,8 +1,24 @@
 # VOXEL CITY DRIVER 🚕
 
-**v0.1 — A playable, client-side voxel driving game for GitHub Pages.**
+**v0.2 beta — A playable, client-side voxel driving game for GitHub Pages.**
 
-A colorful fictional city with driveable cars, 5 camera angles, touch controls, responsive NPC traffic, airport passenger missions, a small vehicle garage, free paint customization and local saved progress.
+A fictional voxel city with arcade driving, 5 camera angles, icon-based mobile controls, responsive NPC traffic, GPS-style passenger routes, airport missions, a garage, free paint customization and local saved progress.
+
+## v0.2 beta — driving feel, wayfinding and city character (2026-10-30)
+
+This is an incremental v0.2 preview, **not a finished visual-quality release**.
+The current GitHub Pages build now includes:
+
+- Noticeably stronger acceleration and higher maximum speed for every vehicle class.
+- **One icon-only brake/reverse pedal:** press to brake, continue holding at low forward speed to reverse. W/Up accelerates; S/Down/Space controls brake/reverse.
+- Live street-grid route finding to the nearest available passenger and, after pickup, to Skyport airport.
+- An on-screen direction arrow, next waypoint/distance, dashed minimap route, gold road guide and glowing destination beacon.
+- Toofan-inspired baked voxel pedestrians, market stalls, planters, benches and awnings; more diverse NPC traffic vehicles.
+- Existing collision, camera switching, menus, garage, settings and local saves are preserved.
+
+**Still planned:** Per-wheel suspension physics, deeper vehicle materials/animations, terrain variety, authored neighbourhood landmarks, better NPC pedestrian movement, traffic improvements and extensive device-specific tuning. Automated Chromium smoke tests ensure the game boots and menus work but do not substitute for visual/device playtesting.
+
+---
 
 ## Play on GitHub Pages
 
@@ -50,8 +66,8 @@ The workflow configures the GitHub Pages subpath `/Gogogo/` automatically. `dist
 
 | Action | Desktop | Mobile |
 |---|---|---|
-| Accelerate | W / ↑ | GAS pedal |
-| Brake/reverse | S / ↓ / Space | BRAKE pedal |
+| Accelerate | W / ↑ | Green acceleration icon |
+| Brake/reverse | S / ↓ / Space | Red brake icon — hold to reverse after stopping |
 | Steer | A/D or ←/→ | Left/right controls |
 | Change camera | C | ◉ camera button |
 | Pick up or drop off | E near marker at low speed | PICK UP / DROP OFF button |
@@ -60,7 +76,7 @@ The workflow configures the GitHub Pages subpath `/Gogogo/` automatically. `dist
 | Fullscreen | F | ⛶ button, when browser supported |
 | Orbit camera | Drag left or right | Swipe the 3D scene |
 
-Follow golden markers to available passengers. After boarding, follow the airport objective to the turquoise drop-off zone. Completed journeys pay fares. Purchase additional cars in the garage and repaint them freely. Car upgrades are intentionally **not** sold.
+Follow the compass arrow, minimap route and golden road guides to available passengers. After boarding, follow the airport objective to the turquoise drop-off zone. Completed journeys pay fares. Purchase additional cars in the garage and repaint them freely. Car upgrades are intentionally **not** sold.
 
 ## Version 0.1 scope
 

@@ -40,6 +40,16 @@ jobs:
             sleep 1
           done
           npm run smoke
+      - name: Upload game playtest screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gogogo-browser-playtest
+          path: |
+            game-title-smoke.png
+            game-driving-smoke.png
+            browser-smoke-failure.png
+          if-no-files-found: ignore
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
