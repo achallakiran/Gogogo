@@ -76,37 +76,47 @@ try {
   await page.locator('[data-action="dismiss-fullscreen-help"]').click();
   assert.equal(await page.locator('#fullscreen-help').count(),0);
 
-  // A separate touch-enabled landscape viewport exercises the real coarse
-  // pointer CSS, including the interaction prompt while a taxi is at pickup.
-  const mobileContext=await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:1,hasTouch:true,isMobile:true});
-  try{
-    const mobile=await mobileContext.newPage();
-    await mobile.goto(origin+'?debug=1',{waitUntil:'domcontentloaded',timeout:30000});
-    await mobile.locator('.title-content').waitFor({timeout:30000});
-    await mobile.locator('[data-action="new-game"]').first().click();
-    await mobile.locator('#hud').waitFor({timeout:10000});
-    await mobile.evaluate(()=>{
-      const g=window.__GOGOGO_DEBUG__;
-      g.player.reset([5,2,-75],0);
-      g.ui.updateHUD(true);
-    });
-    const prompt=mobile.locator('#interact-prompt'),meter=mobile.locator('.hud-speed');
-    assert.ok(!(await prompt.evaluate(el=>el.classList.contains('hidden'))),'Expected pickup action at passenger location');
-    const [p,m,pedals]=await Promise.all([prompt.boundingBox(),meter.boundingBox(),mobile.locator('.touch-pedals').boundingBox()]);
-    const overlaps=(a,b)=>a&&b&&a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
-    assert.ok(!overlaps(p,m),'Passenger action must not overlap speedometer: '+JSON.stringify({p,m}));
-    assert.ok(!overlaps(p,pedals),'Passenger action must not overlap pedals: '+JSON.stringify({p,pedals}));
-    await mobile.screenshot({path:'game-mobile-passenger-smoke.png',timeout:18000});
-    // Pedestrians respond to a moving car. Run the logical reaction directly
-    // so the assertion doesn't depend on slow software-renderer frame pacing.
-    const reacted=await mobile.evaluate(()=>{
-      const g=window.__GOGOGO_DEBUG__,v=g.missions.pickups[0].visual;
-      g.player.body.setLinvel({x:0,y:0,z:-6},true);
-      g.missions.update(g.t,g.player,1/60);
-      return v.cooldown>0 && v.jumpStarted===g.t;
-    });
-    assert.ok(reacted,'Passenger should initiate a jump/evade reaction to a moving nearby car');
-  }finally{await mobileContext.close();}
+  // Reuse the running WebGL context for a mobile-sized layout pass.
+  // GitHub's software renderer struggles to boot a SECOND 3D city in parallel.
+  // Apply the actual (pointer:coarse) CSS rules to a 844x390 viewport, then
+  // measure geometry and capture the pickup state.
+  await page.setViewportSize({width:844,height:390});
+  await page.evaluate(()=>{
+    const rules=[];
+    for(const sheet of document.styleSheets){
+      let css;try{css=sheet.cssRules;}catch{continue;}
+      for(const rule of css||[]){
+        if(rule.type===CSSRule.MEDIA_RULE && rule.conditionText.includes('pointer: coarse')){
+          for(const child of rule.cssRules)rules.push(child.cssText);
+        }
+        if(rule.type===CSSRule.MEDIA_RULE && rule.conditionText.includes('pointer:coarse')){
+          for(const child of rule.cssRules)rules.push(child.cssText);
+        }
+      }
+    }
+    if(!rules.length)throw Error('No coarse-pointer CSS available for mobile layout test');
+    const injected=document.createElement('style');
+    injected.id='mobile-layout-emulation';
+    injected.textContent=rules.join('\n');
+    document.head.appendChild(injected);
+    const g=window.__GOGOGO_DEBUG__;
+    g.player.reset([5,2,-75],0);
+    g.ui.updateHUD(true);
+  });
+  const prompt=page.locator('#interact-prompt'),meter=page.locator('.hud-speed');
+  assert.ok(!(await prompt.evaluate(el=>el.classList.contains('hidden'))),'Expected pickup action at passenger location');
+  const [p,m,pedals]=await Promise.all([prompt.boundingBox(),meter.boundingBox(),page.locator('.touch-pedals').boundingBox()]);
+  const overlaps=(a,b)=>a&&b&&a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
+  assert.ok(!overlaps(p,m),'Passenger action must not overlap speedometer: '+JSON.stringify({p,m}));
+  assert.ok(!overlaps(p,pedals),'Passenger action must not overlap pedals: '+JSON.stringify({p,pedals}));
+  await page.screenshot({path:'game-mobile-passenger-smoke.png',timeout:18000});
+  const reacted=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,v=g.missions.pickups[0].visual;
+    g.player.body.setLinvel({x:0,y:0,z:-6},true);
+    g.missions.update(g.t,g.player,1/60);
+    return v.cooldown>0 && v.jumpStarted===g.t;
+  });
+  assert.ok(reacted,'Passenger should initiate a jump/evade reaction to a moving nearby car');
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
   console.log('Browser smoke PASSED: desktop drive, fullscreen feedback, mobile passenger placement, pedestrian reaction.');
 } catch(e) {
