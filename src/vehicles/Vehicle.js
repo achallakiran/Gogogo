@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createVoxelVehicleModel} from './VoxelVehicleModel.js';
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import {terrainHeight} from '../world/World.js';
 
@@ -11,48 +12,7 @@ const lightMat=material('#ffeac4',{emissive:'#ffc06a',emissiveIntensity:.8});
 const tailMat=material('#ff5062',{emissive:'#f91e3a',emissiveIntensity:.6});
 function cube(parent,w,h,d,mat,x=0,y=0,z=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
 function cylinder(parent,r,h,mat,x,y,z,rotateZ=Math.PI/2){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),mat);m.position.set(x,y,z);m.rotation.z=rotateZ;m.castShadow=true;parent.add(m);return m;}
-export function makeVehicleModel(spec,color){
-  const root=new THREE.Group();const chassis=new THREE.Group();root.add(chassis);
-  const paint=material(color,{metalness:.25,roughness:.4});
-  const dark=material('#243047',{metalness:.12});
-  const w=spec.width,l=spec.length,r=spec.wheel;
-  const truck=spec.id==='truck',van=spec.id==='van',suv=spec.id==='suv',sports=spec.id==='coupe';
-  const floorY=truck?.04:-.09;
-  cube(chassis,w,.46,l*.95,paint,0,floorY,0);
-  cube(chassis,w*.94,.22,l*.93,material('#15243a'),0,floorY-.28,0);
-  const roofY=truck?.90:van?1.10:suv?.90:sports?.44:.71;
-  const roofW=w*(truck?.60:.84), roofLength=l*(van?.82:sports?.39:.52);
-  cube(chassis,roofW,roofY*1.05,roofLength,paint,0,roofY*.59,l*(van?.0:.08));
-  // cabin side windows and windshield; front of car is -Z
-  cube(chassis,roofW*.92,roofY*.51,.07,glassMat,0,roofY*.71,l*.08-roofLength*.5-.035);
-  cube(chassis,roofW*.92,roofY*.42,.06,glassMat,0,roofY*.69,l*.08+roofLength*.5+.035);
-  for(let side of [-1,1]){
-    cube(chassis,.07,roofY*.38,roofLength*.72,glassMat,side*(roofW*.5+.04),roofY*.70,l*.08);
-    cube(chassis,.095,.18,l*.95,dark,side*(w*.5),-.02,0);
-    cube(chassis,.11,.20,.25,dark,side*(w*.51),.4,-l*.29);
-  }
-  const lampY=floorY+.08;
-  for(const side of [-1,1]){
-    cube(chassis,.46,.18,.09,lightMat,side*w*.31,lampY,-l*.48-.04);
-    cube(chassis,.48,.18,.09,tailMat,side*w*.31,lampY,l*.48+.04);
-  }
-  cube(chassis,w*.65,.13,.15,dark,0,floorY-.20,-l*.49);
-  cube(chassis,w*.65,.13,.15,dark,0,floorY-.20,l*.49);
-  if(spec.id==='taxi'){
-    cube(chassis,.95,.24,.52,material('#ffe59b',{emissive:'#cca03b',emissiveIntensity:.3}),0,roofY*1.15,l*.08);
-  }
-  if(truck){cube(chassis,w*.75,.13,l*.40,dark,0,.56,l*.08);cube(chassis,w*.86,.16,.48,dark,0,-.31,-l*.5);}
-  if(sports){cube(chassis,w*.92,.09,.36,paint,0,.32,l*.41);}
-  const wheels=[];
-  for(const axle of [-1,1])for(const side of [-1,1]){
-    const holder=new THREE.Group();holder.position.set(side*(w*.5-.06),-.50,axle*(l*.5-r*.85));root.add(holder);
-    const spin=new THREE.Group();holder.add(spin);
-    cylinder(spin,r,r*.55,tireMat,0,0,0);cylinder(spin,r*.64,r*.59,wheelHub,side*r*.29,0,0);
-    const rim=cylinder(spin,r*.28,r*.6,dark,side*r*.31,0,0);rim.castShadow=false;
-    wheels.push({holder,spin,axle,side,baseY:-.50});
-  }
-  return {root,chassis,paint,wheels};
-}
+export function makeVehicleModel(spec,color){return createVoxelVehicleModel(spec,color);}
 export class Vehicle{
   constructor(scene,world,spec,color,at=[0,2,0],heading=0){
     this.scene=scene;this.world=world;this.spec=spec;this.color=color;this.heading=heading;this.steer=0;this.speed=0;this.model=makeVehicleModel(spec,color);scene.add(this.model.root);
