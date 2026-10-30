@@ -24,6 +24,17 @@ try {
   await page.locator('#hud').waitFor({timeout:10000});
   await page.waitForTimeout(800);
   assert.ok(await page.locator('#game canvas').count()>0,'Expected rendered canvas');
+  const worldFoundation=await page.evaluate(()=>{
+    const e=window.__GOGOGO_DEBUG__?.environment;
+    return e?{version:e.worldManifestVersion,ids:e.permanentLandmarkIds,
+      collisionCount:e.landmarkColliders?.count,rigidBodies:e.landmarkColliders?.bodies?.length}:null;
+  });
+  console.log('WORLD_FOUNDATION',JSON.stringify(worldFoundation));
+  assert.equal(worldFoundation?.version,1);
+  assert.equal(worldFoundation?.ids?.length,5);
+  assert.ok(worldFoundation?.collisionCount>=12,'Expected landmark obstacle colliders: '+JSON.stringify(worldFoundation));
+  assert.equal(worldFoundation?.rigidBodies,4);
+
   // Verify *physics* support instead of relying on a single rendering screenshot.
   // The original airport apron/runway extended outside the heightfield, so a
   // player could drive off the physics world while standing on a visible slab.

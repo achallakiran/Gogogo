@@ -5,6 +5,11 @@ import {attachTerrainCollider,TERRAIN_WIDTH,TERRAIN_DEPTH} from './terrainCollid
 import {createVoxelFacade,batchStaticScenery} from './Visuals.js';
 import {populateStreetLife} from './StreetLife.js';
 import {populateLandmarks} from './CityLandmarks.js';
+import {terrainHeight,surfaceInfoAt,createTerrainGeometry,GRID_LINES} from './SurfaceSystem.js';
+import {FIXED_LANDMARKS,overlapsProtectedFootprint} from './WorldManifest.js';
+import {attachLandmarkColliders} from './LandmarkColliders.js';
+import {makeTerrainHeightfield} from './terrainCollider.js';
+export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
 const MAT = (color, opts={})=>{
@@ -48,29 +53,12 @@ function labelTexture(text,fg='#ffffff',bg='#263a56'){
 }
 function sign(parent,text,x,y,z,width=10,bg='#25364c',rotate=0){const m=new THREE.Mesh(new THREE.PlaneGeometry(width,width*.25), new THREE.MeshBasicMaterial({map:labelTexture(text,'#ffffff',bg),side:THREE.DoubleSide}));m.position.set(x,y,z);m.rotation.y=rotate;parent.add(m);return m;}
 function colliderBox(physics,x,y,z,w,h,d){if(!physics)return;const rb=physics.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x,y,z));physics.createCollider(RAPIER.ColliderDesc.cuboid(w/2,h/2,d/2),rb);}
-export function terrainHeight(x,z){
-  const ax=Math.abs(x),az=Math.abs(z);
-  const outskirts=S.smoothstep(Math.max(ax-265,az-260),0,95);
-  const hills=outskirts*(2.5*Math.sin(x*.026)*Math.cos(z*.029)+3.7*Math.sin((x+z)*.016));
-  let dips=0;
-  for(const p of [[-81,-120,3.1],[114,0,2.9],[0,113,3.3],[-208,180,2.5]]){
-    const dx=(x-p[0])/p[2],dz=(z-p[1])/p[2];const r=dx*dx+dz*dz;
-    dips-=.45*Math.exp(-r*.7);
-  }
-  const bump=.12*Math.exp(-Math.pow((z+188)/2.8,2))*Math.exp(-Math.pow(x/65,4));
-  // Airport's terminal, apron and runway are built at ground level y=0.
-  // Smoothly settle the underlying hills to that same elevation to avoid
-  // visible tarmac sheets or collisions below/above the runway surface.
-  const airportZone=S.smoothstep(x,345,376) *
-    S.smoothstep(z,-280,-245) * (1-S.smoothstep(z,21,49));
-  return (hills+dips+bump)*(1-airportZone);
-}
+
 function terrain(scene,physics){
-  const g=new THREE.PlaneGeometry(TERRAIN_WIDTH,TERRAIN_DEPTH,220,166);g.rotateX(-Math.PI/2);
-  const a=g.attributes.position;
-  for(let i=0;i<a.count;i++)a.setY(i,terrainHeight(a.getX(i),a.getZ(i)));
-  g.computeVertexNormals();const m=new THREE.Mesh(g,grass);m.receiveShadow=true;scene.add(m);
-  if(physics)attachTerrainCollider(physics,RAPIER,terrainHeight);
+  const sampleGrid=makeTerrainHeightfield(terrainHeight);
+  const g=createTerrainGeometry(sampleGrid);
+  const m=new THREE.Mesh(g,grass);m.receiveShadow=true;scene.add(m);
+  if(physics)attachTerrainCollider(physics,RAPIER,terrainHeight,sampleGrid);
 }
 // Keep adjacent street strips out of overlapping intersection polygons.
 export function roadSegments(crossings,start,end,halfGap){
@@ -96,30 +84,30 @@ function strip(scene,orientation,center,start,end,width,material,layer=.105){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const m=new THREE.Mesh(g,material);m.receiveShadow=true;scene.add(m);
 }
 function buildRoads(scene){
-  const xlines=[-240,-180,-120,-60,0,60,120,180,240];
-  const zlines=[-240,-180,-120,-60,0,60,120,180,240];
+  const xlines=GRID_LINES;
+  const zlines=GRID_LINES;
   // North-south roads own intersection patches; east-west strips stop at
   // their edges. This removes the coplanar surfaces that visibly flicker.
   for(const x of xlines){
-    strip(scene,'z',x,-273,273,15.5,curbMat,.055);
-    strip(scene,'z',x,-272,272,12.5,roadMat,.105);
+    strip(scene,'z',x,-273,273,15.5,curbMat,.060);
+    strip(scene,'z',x,-272,272,12.5,roadMat,.043);
   }
   for(const z of zlines){
     const end=z===-120?405:272;
     for(const [start,stop] of roadSegments(xlines,-272,end,7.75)){
-      strip(scene,'x',z,start,stop,15.5,curbMat,.055);
+      strip(scene,'x',z,start,stop,15.5,curbMat,.060);
     }
     for(const [start,stop] of roadSegments(xlines,-271,end,6.25)){
-      strip(scene,'x',z,start,stop,12.5,(z===-120&&start>=246)?roadAlt:roadMat,.105);
+      strip(scene,'x',z,start,stop,12.5,(z===-120&&start>=246)?roadAlt:roadMat,.043);
     }
   }
   for(const x of [-240,-180,-120,-60,0,60,120,180,240]){
-    for(let z=-258;z<=258;z+=9){if(zlines.some(c=>Math.abs(c-z)<13))continue;box(scene,x,terrainHeight(x,z)+.139,z,.24,.012,4.2,white,false);}
+    for(let z=-258;z<=258;z+=9){if(zlines.some(c=>Math.abs(c-z)<13))continue;box(scene,x,terrainHeight(x,z)+.073,z,.24,.012,4.2,white,false);}
   }
-  for(const z of zlines){for(let x=-257;x<=(z===-120?390:258);x+=9){if(xlines.some(c=>Math.abs(c-x)<13))continue;box(scene,x,terrainHeight(x,z)+.139,z,4.2,.012,.24,white,false);}}
+  for(const z of zlines){for(let x=-257;x<=(z===-120?390:258);x+=9){if(xlines.some(c=>Math.abs(c-x)<13))continue;box(scene,x,terrainHeight(x,z)+.073,z,4.2,.012,.24,white,false);}}
   // pedestrian zebra crossings around the central plaza
   for(const [x,z] of [[0,0],[60,-60],[-60,60],[180,-120],[-120,-120]]){
-    for(let i=0;i<6;i++){box(scene,x-5+i*2,terrainHeight(x-5+i*2,z+10)+.14,z+10,1.05,.015,3.2,white,false);}
+    for(let i=0;i<6;i++){box(scene,x-5+i*2,terrainHeight(x-5+i*2,z+10)+.074,z+10,1.05,.015,3.2,white,false);}
   }
   // Street traffic lights on concrete islands
   const pole=MAT('#27374c'),red=MAT('#eb6664',{emissive:'#9f1f1d',emissiveIntensity:.3}),green=MAT('#67e1a1',{emissive:'#178c4b',emissiveIntensity:.2});
@@ -167,7 +155,10 @@ function buildings(scene,physics){
       const ox=((k%2)-.5)*23+(rand()-.5)*4;
       const oz=((Math.floor(k/2)%2)-.5)*23+(rand()-.5)*4;
       const h=8+rand()*16+(cityCenter?downtown*40*rand():0);
-      building(scene,physics,cx+ox,cz+oz,w,d,h,accent[Math.floor(rand()*accent.length)],rand,wins,occluders);
+      const bx=cx+ox,bz=cz+oz;
+      // Reserved landmark parcels override ordinary procedural buildings.
+      if(overlapsProtectedFootprint(bx,bz,w,d,.2))continue;
+      building(scene,physics,bx,bz,w,d,h,accent[Math.floor(rand()*accent.length)],rand,wins,occluders);
     }
     for(let t=0;t<3;t++)tree(scene,cx-24+rand()*48,cz-24+rand()*48);
   }
@@ -240,7 +231,13 @@ export function createWorld(scene,physics){
   sun.shadow.camera.left=-210;sun.shadow.camera.right=210;sun.shadow.camera.top=210;sun.shadow.camera.bottom=-210;sun.shadow.camera.far=410;
   sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);
   const skyG=new THREE.SphereGeometry(210,12,8);const skyM=MAT('#fff0b9',{emissive:'#f5db90',emissiveIntensity:.7});const sunBall=new THREE.Mesh(skyG,skyM);sunBall.position.set(-550,620,-680);scene.add(sunBall);
-  terrain(scene,physics);buildRoads(scene);const occluders=buildings(scene,physics);airport(scene,physics);details(scene);const streetLife=populateStreetLife(scene,terrainHeight);const landmarkCount=populateLandmarks(scene,terrainHeight);
+  terrain(scene,physics);buildRoads(scene);
+  const occluders=buildings(scene,physics);
+  airport(scene,physics);details(scene);
+  const streetLife=populateStreetLife(scene,terrainHeight);
+  const landmarkCount=populateLandmarks(scene,terrainHeight);
+  const landmarkColliders=attachLandmarkColliders(physics,RAPIER,terrainHeight);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount};
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,
+    worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

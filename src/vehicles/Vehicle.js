@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createVoxelVehicleModel} from './VoxelVehicleModel.js';
 import * as RAPIER from '@dimforge/rapier3d-compat';
-import {terrainHeight} from '../world/World.js';
+import {terrainHeight,surfaceInfoAt} from '../world/SurfaceSystem.js';
 import {steeringYawRate} from './Steering.js';
 import {longitudinalAcceleration} from './DrivingDynamics.js';
 
@@ -53,7 +53,7 @@ export class Vehicle{
     this.reversing=forwardSpeed<-.7;
     body.applyImpulse({x:fwd.x*accel*dt*mass,y:0,z:fwd.z*accel*dt*mass},true);
     // Lateral tire traction: surfaces and vehicle type influence skids.
-    const pos=body.translation();const offRoad=!([-240,-180,-120,-60,0,60,120,180,240].some(x=>Math.abs(pos.x-x)<8) || [-240,-180,-120,-60,0,60,120,180,240].some(z=>Math.abs(pos.z-z)<8));
+    const pos=body.translation();const offRoad=surfaceInfoAt(pos.x,pos.z).type==='terrain';
     const gripFactor=offRoad ? (spec.id==='truck'?.90:.45) : 1;
     const grip=clamp(spec.grip*gripFactor*dt,0,.96);
     body.applyImpulse({x:-right.x*lateralSpeed*grip*mass,y:0,z:-right.z*lateralSpeed*grip*mass},true);

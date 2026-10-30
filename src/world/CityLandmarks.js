@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {landmarkById} from './WorldManifest.js';
 
 // Three authored focal points and one welcome gate make the world read as
 // identifiable neighbourhoods, rather than a repeated grid of towers.
@@ -63,7 +64,7 @@ function clockFace(){
   return new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide});
 }
 function clockSquare(scene,heightAt){
-  const x=-150,z=150,y=heightAt(x,z),s=new Sculpt();
+  const [x,z]=landmarkById('clock-square').position,y=heightAt(x,z),s=new Sculpt();
   s.box(0,.35,0,17,.7,17,'#bfb6a6');
   for(const corner of [-1,1])for(const edge of [-1,1]){
     s.box(corner*7.8,.95,edge*7.8,1,1,1,'#d9c49e');
@@ -93,7 +94,7 @@ function clockSquare(scene,heightAt){
   sign(root,'CLOCK SQUARE',0,2.3,5.2,8);
 }
 function metroPlaza(scene,heightAt){
-  const x=150,z=150,y=heightAt(x,z),s=new Sculpt();
+  const [x,z]=landmarkById('metro-terminal').position,y=heightAt(x,z),s=new Sculpt();
   s.box(0,.2,0,37,.38,24,'#d8d5bd');
   s.box(0,.8,0,34,.7,20,'#4f7b82');
   for(let i=-4;i<=4;i++){
@@ -115,7 +116,7 @@ function metroPlaza(scene,heightAt){
   sign(root,'CITY LINE',0,6.7,9.6,12,Math.PI);
 }
 function welcomeGate(scene,heightAt){
-  const x=0,z=-27,y=heightAt(x,z),s=new Sculpt();
+  const [x,z]=landmarkById('gogogo-welcome-gate').position,y=heightAt(x,z),s=new Sculpt();
   s.box(-9.0,4.1,0,1.0,8.2,1.2,'#355d70');
   s.box(9.0,4.1,0,1.0,8.2,1.2,'#355d70');
   for(let i=-7;i<=7;i+=2)s.box(i,8.1,0,2.1,.35,1.4,i%4===0?'#f2b95d':'#6cbdac');
@@ -125,7 +126,7 @@ function welcomeGate(scene,heightAt){
   sign(root,'WELCOME TO GOGOGO',0,9.1,.62,16);
 }
 function plazaArt(scene,heightAt){
-  const x=30,z=30,y=heightAt(x,z),s=new Sculpt();
+  const [x,z]=landmarkById('sunrise-plaza').position,y=heightAt(x,z),s=new Sculpt();
   // Frame the existing fountain with non-driveable decorative arches.
   for(const edge of [-1,1]){
     const px=edge*15;

@@ -20,8 +20,8 @@ export function makeTerrainHeightfield(heightAt, width = TERRAIN_WIDTH, depth = 
   }
   return { nrows, ncols, heights, scale: { x: width, y: 1, z: depth } };
 }
-export function attachTerrainCollider(world, RAPIER, heightAt) {
-  const { nrows, ncols, heights, scale } = makeTerrainHeightfield(heightAt);
+export function attachTerrainCollider(world, RAPIER, heightAt, sampledGrid=null) {
+  const { nrows, ncols, heights, scale } = sampledGrid || makeTerrainHeightfield(heightAt);
   const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
   world.createCollider(RAPIER.ColliderDesc.heightfield(nrows, ncols, heights, scale).setFriction(1.25), body);
   // Catch-all under the actual heightfield. Even if a wheel slips through a
