@@ -30,10 +30,21 @@ try {
       collisionCount:e.landmarkColliders?.count,rigidBodies:e.landmarkColliders?.bodies?.length}:null;
   });
   console.log('WORLD_FOUNDATION',JSON.stringify(worldFoundation));
+  const hill=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    const m=g.environment.mountain;
+    return {railCount:m.railCount,barriers:m.barrierBodies.length,
+      trees:m.trees,rocks:m.rocks,navRoute:(g.navigation.getRoute()||[]).length,
+      samples:m.length,
+      surfaces:[[120,272],[160,325],[175,390],[206,455]].map(([x,z])=>g.probeGround(x,z))};
+  });
+  console.log('MOUNTAIN_DISTRICT',JSON.stringify(hill));
+  assert.ok(hill.railCount>15&&hill.barriers>15&&hill.trees>40&&hill.samples>130);
+  assert.ok(hill.surfaces.every(s=>s.hit&&s.toi<68.5),'Mountain terrain must be physically supported '+JSON.stringify(hill));
   assert.equal(worldFoundation?.version,1);
-  assert.equal(worldFoundation?.ids?.length,5);
+  assert.equal(worldFoundation?.ids?.length,6);
   assert.ok(worldFoundation?.collisionCount>=12,'Expected landmark obstacle colliders: '+JSON.stringify(worldFoundation));
-  assert.equal(worldFoundation?.rigidBodies,4);
+  assert.equal(worldFoundation?.rigidBodies,5);
 
   // Regression: holding throttle must not produce an involuntary
   // wheelie / launch. Simulate physics at fixed dt without frame-time noise.

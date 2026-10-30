@@ -27,6 +27,11 @@ const entries=[
      {type:'box',center:[0,6,-14],size:[32,1,2]},
      {type:'cylinder',center:[0,.55,0],radius:7,halfHeight:.55}
    ]},
+  {id:'pinecrest-lodge',label:'Pinecrest Lodge',assetId:'landmarks/pinecrest-lodge',
+   position:[206,470],footprint:[27,25],protected:true,collision:[
+     {type:'box',center:[0,4,0],size:[16,8,12]},
+     {type:'box',center:[0,8.5,0],size:[18.5,1,15]}
+   ]},
   {id:'skyport-airport',label:'Skyport International',assetId:'landmarks/skyport-airport',position:[444,-114],footprint:[177,265],
    protected:true,collisionOwner:'airport-legacy',collision:[]}
 ];

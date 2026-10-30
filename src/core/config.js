@@ -22,7 +22,8 @@ export const PICKUPS = [
   {id:'p1',pos:[-125,4],label:'Old Town Market',passengers:2,bonus:70},
   {id:'p2',pos:[124,184],label:'Maple Gardens',passengers:3,bonus:120},
   {id:'p3',pos:[-184,-122],label:'Harbor Heights',passengers:1,bonus:100},
-  {id:'p4',pos:[184,-245],label:'Westside Mall',passengers:4,bonus:180}
+  {id:'p4',pos:[184,-245],label:'Westside Mall',passengers:4,bonus:180},
+  {id:'p5',pos:[206,460],label:'Pinecrest Lodge',passengers:2,bonus:280}
 ];
 export const AIRPORT = {pos:[355,-123],name:'Skyport International'};
 export const DEFAULT_SETTINGS = {quality:'auto',sound:true,volume:0.55,sensitivity:0.65,camera:'chase',shadows:true,roadGuides:true};

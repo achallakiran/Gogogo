@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {planRoadRoute,getNextTurn,distance} from './Route.js';
 import {terrainHeight} from '../world/World.js';
+import {MOUNTAIN_SAMPLES} from '../world/MountainData.js';
 
 // A few small translucent chevrons floating above the road are clearly an
 // optional game helper, not permanent painted road markings. One instanced
@@ -89,6 +90,18 @@ export class Navigator{
     const yaw=Math.atan2(-dx,-dz);
     for(let d=10;d<length-3;d+=16){
       this.samples.push({x:a[0]+dx*d,z:a[1]+dz*d,yaw});
+    }
+  }
+  // When heading up to the lodge, show chevrons that follow the curved
+  // roadway rather than pretending the mountain is a city grid.
+  const lodgeTarget=this.route.some(p=>p[1]>420&&p[0]>95&&p[0]<225);
+  if(lodgeTarget){
+    let descending=this.route.length>2&&this.route[0][1]>this.route[this.route.length-1][1];
+    const samples=descending?[...MOUNTAIN_SAMPLES].reverse():MOUNTAIN_SAMPLES;
+    for(let i=4;i<samples.length-4;i+=7){
+      const a=samples[i],b=samples[Math.min(i+2,samples.length-1)];
+      const yaw=Math.atan2(-(b.x-a.x),-(b.z-a.z));
+      this.samples.push({x:a.x,z:a.z,yaw});
     }
   }
   this.lastGuidePosition=null;

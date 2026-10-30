@@ -1,4 +1,5 @@
-// Deterministic, dependency-free route planner for the connected city grid.
+import {MOUNTAIN_CONTROL_POINTS,MOUNTAIN_START} from '../world/MountainData.js';
+// Deterministic route planner for connected city streets and the authored mountain route.
 // Every waypoint belongs to an actual road intersection, including the airport spur.
 export const GRID=[-240,-180,-120,-60,0,60,120,180,240];
 export const AIRPORT_SPUR=[300,360];
@@ -8,12 +9,22 @@ function roadNodes(){
   const nodes=[];
   for(const x of GRID)for(const z of GRID)nodes.push([x,z]);
   for(const x of AIRPORT_SPUR)nodes.push([x,-120]);
+  for(const [x,z] of MOUNTAIN_CONTROL_POINTS)nodes.push([x,z]);
   return nodes;
 }
 const NODES=roadNodes();
 const lookup=new Map(NODES.map((n,i)=>[key(n),i]));
+const mountainEdges=new Map();
+for(let i=0;i<MOUNTAIN_CONTROL_POINTS.length-1;i++){
+  const a=MOUNTAIN_CONTROL_POINTS[i],b=MOUNTAIN_CONTROL_POINTS[i+1];
+  const ak=key(a),bk=key(b);
+  if(!mountainEdges.has(ak))mountainEdges.set(ak,[]);
+  if(!mountainEdges.has(bk))mountainEdges.set(bk,[]);
+  mountainEdges.get(ak).push([b[0],b[1]]);
+  mountainEdges.get(bk).push([a[0],a[1]]);
+}
 function neighbours(node){
-  const [x,z]=node,opts=[[x-60,z],[x+60,z],[x,z-60],[x,z+60]];
+  const [x,z]=node,opts=[[x-60,z],[x+60,z],[x,z-60],[x,z+60],...(mountainEdges.get(key(node))||[])];
   return opts.filter(p=>lookup.has(key(p)));
 }
 export function nearestNode(pos){
@@ -44,7 +55,7 @@ export function planRoadRoute(start,target){
     visited.add(k);
     if(k===end)break;
     for(const other of neighbours(node)){
-      const nk=key(other),estimate=cost.get(k)+60;
+      const nk=key(other),estimate=cost.get(k)+distance(node,other);
       if(estimate>=(cost.get(nk)??Infinity))continue;
       cost.set(nk,estimate);parent.set(nk,k);q.push(other);
     }

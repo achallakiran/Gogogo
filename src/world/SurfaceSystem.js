@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {closestMountainPoint,MOUNTAIN_ROAD_HALF_WIDTH} from './MountainData.js';
 
 // The canonical height function is the sole source of the drivable terrain.
 // This preserves v0.2 coordinates/heights until roads and hills are rebuilt.
@@ -18,7 +19,19 @@ export function terrainHeight(x,z){
   // visible tarmac sheets or collisions below/above the runway surface.
   const airportZone=S.smoothstep(x,345,376) *
     S.smoothstep(z,-280,-245) * (1-S.smoothstep(z,21,49));
-  return (hills+dips+bump)*(1-airportZone);
+  const cityGround=(hills+dips+bump)*(1-airportZone);
+  // Only sculpt the far northern ridge. The central city and its existing
+  // landmark/save coordinates remain unchanged.
+  if(z<263||z>500||x<42||x>287)return cityGround;
+  const envelope=S.smoothstep(x,42,84)*(1-S.smoothstep(x,255,286));
+  const rise=27*S.smoothstep(z,263,480);
+  const undulation=2.6*Math.sin(x*.046+z*.012)*Math.sin(z*.028);
+  const raw=cityGround+envelope*(rise+undulation);
+  const closest=closestMountainPoint(x,z);
+  // Flatten only the roadbed and gently merge its shoulders into mountain.
+  // Actual physics and visible ground use these same height samples.
+  const roadBlend=1-S.smoothstep(closest.distance,MOUNTAIN_ROAD_HALF_WIDTH+1,36);
+  return THREE.MathUtils.lerp(raw,closest.sample.y,roadBlend);
 }
 
 export const GRID_LINES=Object.freeze([-240,-180,-120,-60,0,60,120,180,240]);
@@ -32,10 +45,13 @@ export function surfaceInfoAt(x,z){
   const distanceZ=Math.min(...GRID_LINES.map(a=>Math.abs(z-a)));
   const northSouth=distanceX<=ROAD_HALF_WIDTH && z>=-272 && z<=272;
   const eastWest=distanceZ<=ROAD_HALF_WIDTH && x>=-272 && (Math.abs(z+120)<ROAD_HALF_WIDTH?x<=405:x<=272);
-  const road=northSouth||eastWest;
-  const shoulder=!road && (
+  const isMountain=z>=269&&z<=480&&x>=70&&x<=247;
+  const mountainDistance=isMountain?closestMountainPoint(x,z).distance:Infinity;
+  const mountainRoad=mountainDistance<=MOUNTAIN_ROAD_HALF_WIDTH;
+  const road=northSouth||eastWest||mountainRoad;
+  const shoulder=!road && (mountainDistance<=MOUNTAIN_ROAD_HALF_WIDTH+3 || (
     (distanceX<=ROAD_SHOULDER_HALF_WIDTH && z>=-273&&z<=273)||
-    (distanceZ<=ROAD_SHOULDER_HALF_WIDTH && x>=-273 && (Math.abs(z+120)<ROAD_SHOULDER_HALF_WIDTH?x<=406:x<=273))
+    (distanceZ<=ROAD_SHOULDER_HALF_WIDTH && x>=-273 && (Math.abs(z+120)<ROAD_SHOULDER_HALF_WIDTH?x<=406:x<=273)))
   );
   return {height:terrainHeight(x,z),type:road?'asphalt':shoulder?'shoulder':'terrain',drivable:true};
 }

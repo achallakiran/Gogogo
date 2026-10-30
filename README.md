@@ -1,3 +1,20 @@
+## v0.3 Phase 2 preview — Pinecrest Hills
+
+This preview introduces one authored scenic mountain-road district north of the city,
+a winding drivable road, guardrail collisions, a fixed Pinecrest Lodge and a passenger
+pickup with a route through the city. Vehicle stabilization prevents exaggerated
+pitching, wheelies and sharp upward launch impulses. The visible road uses draped
+terrain geometry; the shared heightfield supplies its actual physical support.
+
+This is an **initial playable mountain vertical slice**, not the complete phase:
+detailed potholes, wheel-by-wheel suspension, beach, wind and rain still follow
+after the mountain road passes visual and physics QA.
+
+Existing world landmark coordinates, owned vehicles, trip progress and settings
+retain the v1 save format.
+
+---
+
 # VOXEL CITY DRIVER 🚕
 
 **v0.2 beta — A playable, client-side voxel driving game for GitHub Pages.**

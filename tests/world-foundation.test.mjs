@@ -12,7 +12,8 @@ test('all five authored areas retain their v0.2 coordinates',()=>{
  assert.deepEqual(landmarkById('gogogo-welcome-gate').position,[0,-27]);
  assert.deepEqual(landmarkById('sunrise-plaza').position,[30,30]);
  assert.deepEqual(landmarkById('skyport-airport').position,[444,-114]);
- assert.equal(FIXED_LANDMARKS.length,5);
+ assert.deepEqual(landmarkById('pinecrest-lodge').position,[206,470]);
+ assert.equal(FIXED_LANDMARKS.length,6);
  assert.equal(WORLD_MANIFEST_VERSION,1);
  assert.deepEqual(validateWorldManifest(),[]);
 });
@@ -64,4 +65,20 @@ test('saved-game version and storage key remain compatible',()=>{
   if(oldStorage===undefined)delete globalThis.localStorage;
   else globalThis.localStorage=oldStorage;
  }
+});
+
+test('mountain route is continuous, rising, and leaves landmark plots intact',async()=>{
+  const {MOUNTAIN_SAMPLES,MOUNTAIN_CONTROL_POINTS}=await import('../src/world/MountainData.js');
+  const {planRoadRoute}=await import('../src/navigation/Route.js');
+  assert.ok(MOUNTAIN_SAMPLES.length>100);
+  assert.equal(MOUNTAIN_CONTROL_POINTS[0][0],120);
+  for(let i=1;i<MOUNTAIN_SAMPLES.length;i++){
+    const a=MOUNTAIN_SAMPLES[i-1],b=MOUNTAIN_SAMPLES[i];
+    assert.ok(Math.hypot(a.x-b.x,a.z-b.z)<6,'No road discontinuities');
+    assert.ok(Math.abs(a.y-b.y)<2,'No vertical ledges');
+    assert.ok(Number.isFinite(terrainHeight(a.x,a.z)));
+  }
+  assert.ok(MOUNTAIN_SAMPLES.at(-1).y>25);
+  const path=planRoadRoute([120,230],[206,460]);
+  assert.ok(path.some(p=>p[1]>=400),'Mountain road must connect to city navigation');
 });
