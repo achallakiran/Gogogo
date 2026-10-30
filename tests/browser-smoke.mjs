@@ -27,21 +27,24 @@ try {
   // Verify *physics* support instead of relying on a single rendering screenshot.
   // The original airport apron/runway extended outside the heightfield, so a
   // player could drive off the physics world while standing on a visible slab.
-  const support=await page.evaluate(async()=>{
+  const support=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__;
-    const RAPIER=await import('@dimforge/rapier3d-compat').catch(()=>null);
-    if(!RAPIER?.Ray)return {error:'Rapier Ray import unavailable'};
-    const checks=[];
-    for(const [x,z] of [[0,0],[240,-120],[355,-123],[390,-117],[444,-220],[492,-117],[516,-240],[550,-100]]){
-      const ray=new RAPIER.Ray({x,y:65,z},{x:0,y:-1,z:0});
-      const hit=g.world.castRay(ray,90,true);
-      checks.push({x,z,hit:!!hit,toi:hit?.toi??null});
-    }
+    const checks=[[0,0],[240,-120],[355,-123],[390,-117],[444,-220],[492,-117],[516,-240],[550,-100]]
+      .map(([x,z])=>g.probeGround(x,z));
     return {checks};
   });
   console.log('GROUND_SUPPORT',JSON.stringify(support));
-  assert.ok(!support.error,'Physics ray test must access Rapier: '+JSON.stringify(support));
-  assert.ok(support.checks.every(x=>x.hit), 'Every road and airport spot must have a ground collider: '+JSON.stringify(support.checks));
+  assert.ok(support.checks.every(x=>x.hit&&x.toi<68.5),
+    'Every road and airport spot must have a ground collider close to visible ground, not just the deep catch floor: '+JSON.stringify(support.checks));
+  // Simulate a fall and confirm the player returns to the last safe road.
+  const recovered=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    g.player.body.setTranslation({x:0,y:-15,z:0},true);
+    g.keepCarOnGround();
+    const p=g.player.position;
+    return p[1]>1 && Math.abs(p[0])<300 && Math.abs(p[2])<300;
+  });
+  assert.ok(recovered,'Falling below ground must automatically recover the car');
 
   assert.ok(await page.locator('#route-arrow svg').count()>0,'Expected GPS route arrow');
   assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');

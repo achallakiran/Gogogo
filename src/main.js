@@ -114,6 +114,10 @@ class Game{
     this.input.clear();
     this.ui.toast('Back on the road!');
   }
+  probeGround(x,z){
+    const hit=this.world.castRay(new RAPIER.Ray({x,y:65,z},{x:0,y:-1,z:0}),90,true);
+    return {x,z,hit:!!hit,toi:hit?.toi??null};
+  }
   keepCarOnGround(){
     if(!this.player)return;
     const p=this.player.position,{x,y,z}={x:p[0],y:p[1],z:p[2]};
