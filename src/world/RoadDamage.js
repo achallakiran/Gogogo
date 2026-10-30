@@ -1,7 +1,6 @@
 // One fixed, carefully authored road-quality test section. The same triangles
 // are rendered and used as a static Rapier collider; no painted fake holes.
 import * as THREE from 'three';
-import * as RAPIER from '@dimforge/rapier3d-compat';
 import {terrainHeight} from './SurfaceSystem.js';
 
 export const DAMAGE_SECTION=Object.freeze({x:60,z:90,width:12.3,length:38});
@@ -98,7 +97,7 @@ function decorations(scene){
  scene.add(lines);
  return {stones:stones.length,rock,lines};
 }
-export function populateRoadDamage(scene,world){
+export function populateRoadDamage(scene,world,RAPIER){
  const data=roadDamageGeometry();
  const g=new THREE.BufferGeometry();
  g.setAttribute('position',new THREE.BufferAttribute(data.positions,3));
