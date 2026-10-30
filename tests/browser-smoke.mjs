@@ -28,6 +28,20 @@ try {
   assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');
   assert.equal(await page.locator('.hud-help,.hud-objective-label,.objective-line,.objective-distance,.interact-caption,#camera-label,.route-copy').count(),0,
     'The driving HUD should not include verbose labels');
+  // Startup on CI's software WebGL renderer can take multiple seconds.
+  // Wait until a real gameplay tick has built its guide instances.
+  await page.waitForFunction(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    return g?.navigation?.guideMesh?.count>0;
+  },null,{timeout:25000}).catch(async err=>{
+    const diag=await page.evaluate(()=>{
+      const g=window.__GOGOGO_DEBUG__;
+      return g?{frames:g.frameCount,t:g.t,screen:g.ui.screen,target:g.missions.target(g.player.position),
+        route:g.navigation.route,samples:g.navigation.samples?.length,
+        count:g.navigation.guideMesh.count,enabled:g.navigation.guidesEnabled}:null;
+    });
+    throw new Error('Guide arrow initialization timed out: '+JSON.stringify(diag)+' '+err.message);
+  });
   const guideState=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__;
     return {enabled:g.save.settings.roadGuides,count:g.navigation.guideMesh.count,visible:g.navigation.group.visible};
