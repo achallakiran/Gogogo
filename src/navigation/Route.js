@@ -23,6 +23,12 @@ for(let i=0;i<MOUNTAIN_CONTROL_POINTS.length-1;i++){
   mountainEdges.get(ak).push([b[0],b[1]]);
   mountainEdges.get(bk).push([a[0],a[1]]);
 }
+// The 32-metre connector joins the original city street to the mountain.
+const cityConnector=[120,240],ridgeConnector=[120,272];
+for(const [a,b] of [[cityConnector,ridgeConnector],[ridgeConnector,cityConnector]]){
+  const ak=key(a);if(!mountainEdges.has(ak))mountainEdges.set(ak,[]);
+  mountainEdges.get(ak).push(b);
+}
 function neighbours(node){
   const [x,z]=node,opts=[[x-60,z],[x+60,z],[x,z-60],[x,z+60],...(mountainEdges.get(key(node))||[])];
   return opts.filter(p=>lookup.has(key(p)));

@@ -80,5 +80,7 @@ test('mountain route is continuous, rising, and leaves landmark plots intact',as
   }
   assert.ok(MOUNTAIN_SAMPLES.at(-1).y>25);
   const path=planRoadRoute([120,230],[206,460]);
+  assert.ok(path.length>=6,'Hill route must use several actual road waypoints');
+  assert.ok(path.some(([x,z])=>x===120&&z===272),'Must connect through mountain road entry');
   assert.ok(path.some(p=>p[1]>=400),'Mountain road must connect to city navigation');
 });
