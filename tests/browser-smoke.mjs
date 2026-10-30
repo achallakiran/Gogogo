@@ -35,6 +35,41 @@ try {
   assert.ok(worldFoundation?.collisionCount>=12,'Expected landmark obstacle colliders: '+JSON.stringify(worldFoundation));
   assert.equal(worldFoundation?.rigidBodies,4);
 
+  // Regression: holding throttle must not produce an involuntary
+  // wheelie / launch. Simulate physics at fixed dt without frame-time noise.
+  const stability=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,p=g.player;
+    const quatToTilt=()=>{
+      const q=p.body.rotation();
+      const uy=1-2*(q.x*q.x+q.z*q.z);
+      return Math.acos(Math.min(1,Math.max(-1,uy)))*180/Math.PI;
+    };
+    const scenarios=[];
+    for(const scenario of [
+      {name:'straight',at:[0,2,0],heading:0,turn:0},
+      {name:'turn',at:[-60,2,-120],heading:0,turn:1},
+      {name:'reverse',at:[60,2,0],heading:Math.PI,turn:0}
+    ]){
+      p.reset(scenario.at,scenario.heading);
+      let maxHeight=0,maxTilt=0,maxRise=0;
+      for(let i=0;i<250;i++){
+        p.drive({gas:true,brake:false,left:false,right:i<90&&scenario.turn>0},1/60,g.save.settings);
+        g.world.step();p.capturePhysicsPose();
+        const body=p.body.translation(),ground=body.y-g.probeGround(body.x,body.z).toi;
+        // height sampling is independent from castRay, but local height is
+        // near zero on the initial city straightaways.
+        maxHeight=Math.max(maxHeight,body.y);
+        maxTilt=Math.max(maxTilt,quatToTilt());
+        maxRise=Math.max(maxRise,p.body.linvel().y);
+      }
+      scenarios.push({scenario:scenario.name,maxHeight,maxTilt,maxRise,at:p.position});
+    }
+    p.reset([0,2,0],0);
+    return scenarios;
+  });
+  console.log('VEHICLE_STABILITY',JSON.stringify(stability));
+  assert.ok(stability.every(s=>s.maxTilt<36&&s.maxHeight<8&&s.maxRise<5.5),
+    'Throttle must not cause huge jumps or wheelies: '+JSON.stringify(stability));
   // Verify *physics* support instead of relying on a single rendering screenshot.
   // The original airport apron/runway extended outside the heightfield, so a
   // player could drive off the physics world while standing on a visible slab.
