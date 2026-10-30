@@ -17,6 +17,7 @@ import {attachMountainCollisionPatch} from './MountainSurfacePatch.js';
 import {populateCoastalRoad} from './CoastalRoad.js';
 import {populateWorldDensity} from './WorldDensity.js';
 import {populateRoadsideBoundaries} from './RoadsideBoundaries.js';
+import {populateSettlements} from './Settlements.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -253,8 +254,9 @@ export function createWorld(scene,physics){
   const coastalRoad=populateCoastalRoad(scene,physics,RAPIER);
   const worldDensity=populateWorldDensity(scene,physics,RAPIER);
   const roadsideBoundaries=populateRoadsideBoundaries(scene,physics,RAPIER);
+  const settlements=populateSettlements(scene,physics,RAPIER);
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,roadsideBoundaries,biomes,terrainPatch,
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,roadsideBoundaries,settlements,biomes,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }
