@@ -173,7 +173,9 @@ try {
   // facing the Pinecrest lodge. Review this alongside the city screenshot.
   const mountainView=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__;
-    g.player.reset([175,2,437],-2.17);
+    const s=g.environment.mountain.samples[112],next=g.environment.mountain.samples[114];
+    const heading=Math.atan2(-(next.x-s.x),-(next.z-s.z));
+    g.player.reset([s.x,2,s.z],heading);
     g.player.capturePhysicsPose(true);g.player.sync(.016,1);
     g.cameraMode.initial=true;
     g.cameraMode.setMode('chase');
@@ -184,6 +186,38 @@ try {
   console.log('MOUNTAIN_VIEW',JSON.stringify(mountainView));
   assert.ok(mountainView.at[1]>10,'Hill preview camera must stand on elevated terrain');
   await page.screenshot({path:'game-mountain-smoke.png',timeout:18000});
+  const mountainDrive=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,p=g.player,route=g.environment.mountain.samples;
+    const points=[route[14],route[43],route[82],route[118]];
+    const trials=[];
+    for(let k=0;k<points.length;k++){
+      const here=points[k],next=route[Math.min(route.length-1,[16,45,84,120][k])];
+      const yaw=Math.atan2(-(next.x-here.x),-(next.z-here.z));
+      p.reset([here.x,2,here.z],yaw);
+      let maxTilt=0,maxRise=0,minGroundClearance=Infinity;
+      for(let step=0;step<35;step++){
+        p.drive({gas:true,brake:false,left:false,right:false},1/60,g.save.settings);
+        g.world.step();p.stabilizeAfterStep();p.capturePhysicsPose();
+        const pos=p.body.translation(),rot=p.body.rotation();
+        const upright=Math.max(-1,Math.min(1,1-2*(rot.x*rot.x+rot.z*rot.z)));
+        maxTilt=Math.max(maxTilt,Math.acos(upright)*180/Math.PI);
+        maxRise=Math.max(maxRise,p.body.linvel().y);
+        if(step%7===0){
+          const support=g.probeGround(pos.x,pos.z);
+          if(support.toi!==null){
+            const height=65-support.toi;
+            minGroundClearance=Math.min(minGroundClearance,pos.y-height);
+          }
+        }
+      }
+      trials.push({at:[here.x,here.z],maxTilt,maxRise,minGroundClearance});
+    }
+    p.reset([0,2,0],0);
+    return trials;
+  });
+  console.log('MOUNTAIN_DRIVING',JSON.stringify(mountainDrive));
+  assert.ok(mountainDrive.every(x=>x.maxTilt<35&&x.maxRise<5.5&&x.minGroundClearance>-1.8),
+    'Mountain road must remain stable under throttle: '+JSON.stringify(mountainDrive));
   await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__;
     g.player.reset([0,2,0],0);g.cameraMode.initial=true;

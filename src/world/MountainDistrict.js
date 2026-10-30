@@ -68,7 +68,7 @@ function lodge(scene){
  ctx.font='bold 46px system-ui';ctx.fillText('PINECREST LODGE',256,63);
  const tex=new THREE.CanvasTexture(signCanvas);tex.colorSpace=THREE.SRGBColorSpace;
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(12,3),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
- sign.position.set(0,7,-9);building.add(sign);
+ sign.position.set(0,7,-9);sign.rotation.y=Math.PI;building.add(sign);
  return building;
 }
 function decorateRidge(scene,physics){
@@ -159,5 +159,5 @@ export function populateMountainDistrict(scene,physics){
  const cabin=lodge(scene);
  return {road:asphalt,shoulder,railCount:rails.count,
   barrierBodies:rails.colliderBodies,transitionBody,length:MOUNTAIN_SAMPLES.length,
-  trees:detail.treeCount,rocks:detail.rockCount,cabin};
+  trees:detail.treeCount,rocks:detail.rockCount,cabin,samples:MOUNTAIN_SAMPLES};
 }
