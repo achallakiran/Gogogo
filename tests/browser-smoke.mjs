@@ -34,7 +34,7 @@ try {
     return {checks};
   });
   console.log('GROUND_SUPPORT',JSON.stringify(support));
-  assert.ok(support.checks.every(x=>x.hit&&x.toi<68.5),
+  assert.ok(support.checks.every(x=>x.hit&&Number.isFinite(x.toi)&&x.toi>0&&x.toi<68.5),
     'Every road and airport spot must have a ground collider close to visible ground, not just the deep catch floor: '+JSON.stringify(support.checks));
   // Simulate a fall and confirm the player returns to the last safe road.
   const recovered=await page.evaluate(()=>{

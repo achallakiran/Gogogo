@@ -116,7 +116,7 @@ class Game{
   }
   probeGround(x,z){
     const hit=this.world.castRay(new RAPIER.Ray({x,y:65,z},{x:0,y:-1,z:0}),90,true);
-    return {x,z,hit:!!hit,toi:hit?.toi??null};
+    return {x,z,hit:!!hit,toi:hit?.timeOfImpact??null};
   }
   keepCarOnGround(){
     if(!this.player)return;
