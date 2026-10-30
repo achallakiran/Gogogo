@@ -123,3 +123,67 @@
 #fullscreen-help h3{font-size:16px;color:#f9d487;letter-spacing:.09em}
 #fullscreen-help p{font-size:13px;line-height:1.65;color:#ecf5f4;margin:10px 0 16px}
 #fullscreen-help button{padding:11px 22px;background:#eac37c;color:#203643;border:0;border-radius:10px;font-weight:900}
+
+
+/* Kids' HUD: icons + one distance + small speed. Keep the speed away from
+   the bottom driving controls at every supported aspect ratio. */
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;
+ padding:0!important;margin:-1px!important;overflow:hidden!important;
+ clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+#hud .hud-objective{
+ display:flex;align-items:center;gap:8px;width:123px;min-width:123px;max-width:123px;
+ height:52px;padding:6px 8px;border-radius:14px;background:#102b46d9;
+}
+#hud #route-arrow{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px}
+#hud #route-arrow svg{width:24px;height:24px}
+#hud #route-meter{font-size:19px;font-weight:950;letter-spacing:-.04em;
+ color:#fff5cf;white-space:nowrap;font-variant-numeric:tabular-nums}
+#hud .hud-objective[data-destination="airport"] #route-arrow{background:#5ceade}
+#hud .hud-speed,#hud .hud-bottom .hud-speed{
+ position:absolute!important;z-index:4;top:max(14px,env(safe-area-inset-top))!important;
+ bottom:auto!important;left:50%!important;right:auto!important;
+ transform:translateX(-50%)!important;
+ display:flex;flex-direction:row;align-items:baseline;justify-content:center;
+ gap:4px;width:auto!important;min-width:0!important;height:40px;
+ padding:6px 12px!important;border-radius:13px;pointer-events:none;
+ background:#102b46d9;
+}
+#hud .hud-speed b{font-size:27px!important;line-height:1;font-weight:950}
+#hud .hud-speed span{font-size:10px!important;letter-spacing:0;margin:0}
+#hud .hud-bottom{bottom:max(12px,env(safe-area-inset-bottom))}
+#hud .mini-map-wrap{top:max(69px,calc(env(safe-area-inset-top) + 58px));
+ right:max(13px,env(safe-area-inset-right));gap:0}
+#hud #minimap{width:92px;height:92px;border-width:2px}
+#hud .interact-prompt{
+ position:absolute;left:auto!important;right:max(12px,env(safe-area-inset-right))!important;
+ bottom:clamp(115px,28vh,178px)!important;top:auto;
+ transform:none!important;min-width:0;gap:0;z-index:8
+}
+#hud .interact-button{width:54px;height:54px;padding:0;border-radius:50%}
+#hud .interact-prompt[data-action-type="dropoff"] .interact-button{
+ background:#75e3d7;border-color:#b8fff4}
+#hud .touch-pad{margin-left:0;gap:20px}
+#hud .hud-help,#hud #camera-label,#hud .interact-caption,#hud .hud-cash,
+#hud .mini-map-wrap>span,#hud .hud-objective-label,#hud .objective-line,
+#hud .objective-distance,#hud .route-copy{display:none!important}
+.setting-subtitle{display:block;font-size:11px;color:#9bbfc6;line-height:1.3;margin-top:4px;font-weight:500}
+@media(pointer:coarse){
+ #hud .hud-speed{top:max(14px,env(safe-area-inset-top))!important;bottom:auto!important;
+  left:50%!important;right:auto!important;width:auto!important;min-width:0!important;
+  flex-direction:row;padding:6px 12px!important}
+ #hud .touch-pad{margin-left:0}
+ #hud .interact-prompt{bottom:clamp(115px,28vh,178px)!important;min-width:0}
+}
+@media(max-width:360px){
+ #hud .hud-speed{top:calc(env(safe-area-inset-top) + 67px)!important}
+ #hud .mini-map-wrap{top:calc(env(safe-area-inset-top) + 115px)}
+ #hud .hud-objective{width:105px;min-width:105px;max-width:105px;height:45px;gap:5px;padding:5px}
+ #hud #route-arrow{width:33px;height:33px}
+ #hud #route-meter{font-size:17px}
+ #hud .hud-actions{gap:4px}
+ #hud .hud-icon{width:36px;height:36px}
+ #hud .touch-steer,#hud .touch-pedals{gap:5px}
+ #hud .touch-pad button{width:49px;height:53px}
+ #hud .touch-pad .gas{height:65px}
+ #hud .touch-pad .brake{height:60px}
+}

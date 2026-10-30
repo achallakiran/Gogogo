@@ -126,8 +126,10 @@ class Game{
     this.persist();}
   changeSetting(k,value){if(!(k in this.save.settings))return;this.save.settings[k]=value;
     if(k==='camera')this.cameraMode.setMode(value);
+    if(k==='roadGuides'){this.navigation?.setRoadGuides(Boolean(value));this.persist();return;}
     this.sounds.configure(this.save.settings);this.applySettings();this.persist();}
   applySettings(){if(!this.renderer)return;const s=this.save.settings,isMobile=matchMedia('(pointer:coarse)').matches;
+    this.navigation?.setRoadGuides(s.roadGuides!==false);
     const pixelRatio=s.quality==='low'?.78:s.quality==='medium'?1.0:s.quality==='high'?1.65:(isMobile?.92:1.12);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,pixelRatio));
     // Real-time shadow maps replay city geometry several times. Prefer

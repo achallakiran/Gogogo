@@ -25,7 +25,7 @@ export const PICKUPS = [
   {id:'p4',pos:[184,-245],label:'Westside Mall',passengers:4,bonus:180}
 ];
 export const AIRPORT = {pos:[355,-123],name:'Skyport International'};
-export const DEFAULT_SETTINGS = {quality:'auto',sound:true,volume:0.55,sensitivity:0.65,camera:'chase',shadows:true};
+export const DEFAULT_SETTINGS = {quality:'auto',sound:true,volume:0.55,sensitivity:0.65,camera:'chase',shadows:true,roadGuides:true};
 export const DEFAULT_SAVE = () => ({version:1,cash:0,earned:0,trips:0,owned:['taxi'],selected:'taxi',colors:{taxi:COLORS[0].hex},position:[0,2,0],heading:0,hasPlayed:false,settings:{...DEFAULT_SETTINGS}});
 export function formatMoney(n){return '$'+Math.round(n).toLocaleString('en-US');}
 export function distance2(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}

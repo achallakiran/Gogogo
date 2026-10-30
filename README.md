@@ -12,7 +12,7 @@ The current GitHub Pages build now includes:
 - Noticeably stronger acceleration and higher maximum speed for every vehicle class.
 - **One icon-only brake/reverse pedal:** press to brake, continue holding at low forward speed to reverse. W/Up accelerates; S/Down/Space controls brake/reverse.
 - Live street-grid route finding to the nearest available passenger and, after pickup, to Skyport airport.
-- An on-screen direction arrow, next waypoint/distance, dashed minimap route, gold road guide and glowing destination beacon.
+- An uncluttered HUD with a direction arrow and distance, plus a minimap route, optional soft-blue semi-transparent road chevrons (default ON in Settings), and a destination beacon.
 - Toofan-inspired baked voxel pedestrians, market stalls, planters, benches and awnings; more diverse NPC traffic vehicles.
 - Existing collision, camera switching, menus, garage, settings and local saves are preserved.
 

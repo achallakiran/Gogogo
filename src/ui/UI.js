@@ -24,7 +24,7 @@ export class UI{
   }
   header(title,subtitle=''){return `<div class="panel-heading"><button data-action="back" class="back-btn" aria-label="Go back">${icon.back}</button><div><div class="section-label">VOXEL CITY DRIVER</div><h2>${title}</h2>${subtitle?`<p>${subtitle}</p>`:''}</div></div>`;}
   renderSettings(){const s=this.game.save.settings;
-    this.root.innerHTML=`<div class="panel-wash"></div><main class="panel settings-panel">${this.header('Settings','Tune your ride, your way.')}<div class="setting-grid"><div class="setting"><label for="quality">GRAPHICS QUALITY</label><select id="quality" data-setting="quality"><option value="auto" ${s.quality==='auto'?'selected':''}>Auto (recommended)</option><option value="low" ${s.quality==='low'?'selected':''}>Battery saver</option><option value="medium" ${s.quality==='medium'?'selected':''}>Balanced</option><option value="high" ${s.quality==='high'?'selected':''}>High</option></select></div><div class="setting"><label for="camera">DEFAULT CAMERA</label><select id="camera" data-setting="camera">${[['chase','Chase (default)'],['close','Close chase'],['hood','Hood'],['cockpit','Cockpit'],['orbit','Orbit']].map(([k,v])=>`<option value="${k}" ${s.camera===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="setting"><label for="sensitivity">STEERING SENSITIVITY <output id="sensitivity-label">${Math.round(s.sensitivity*100)}%</output></label><input id="sensitivity" type="range" min="20" max="100" value="${Math.round(s.sensitivity*100)}" data-setting="sensitivity"/></div><div class="setting"><label for="volume">SOUND VOLUME <output id="volume-label">${Math.round(s.volume*100)}%</output></label><input id="volume" type="range" min="0" max="100" value="${Math.round(s.volume*100)}" data-setting="volume"/></div><div class="setting"><label class="toggle-row"><span>GAME SOUNDS</span><input type="checkbox" data-setting="sound" ${s.sound?'checked':''}/></label></div><div class="setting"><label class="toggle-row"><span>REAL-TIME SHADOWS</span><input type="checkbox" data-setting="shadows" ${s.shadows?'checked':''}/></label></div></div><div class="panel-note">Settings are saved automatically on this device. A faster graphics preset can help mobile battery life.</div><button data-action="back" class="primary-cta compact">${icon.check} SAVE & RETURN</button></main>`;
+    this.root.innerHTML=`<div class="panel-wash"></div><main class="panel settings-panel">${this.header('Settings','Tune your ride, your way.')}<div class="setting-grid"><div class="setting"><label for="quality">GRAPHICS QUALITY</label><select id="quality" data-setting="quality"><option value="auto" ${s.quality==='auto'?'selected':''}>Auto (recommended)</option><option value="low" ${s.quality==='low'?'selected':''}>Battery saver</option><option value="medium" ${s.quality==='medium'?'selected':''}>Balanced</option><option value="high" ${s.quality==='high'?'selected':''}>High</option></select></div><div class="setting"><label for="camera">DEFAULT CAMERA</label><select id="camera" data-setting="camera">${[['chase','Chase (default)'],['close','Close chase'],['hood','Hood'],['cockpit','Cockpit'],['orbit','Orbit']].map(([k,v])=>`<option value="${k}" ${s.camera===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="setting"><label for="sensitivity">STEERING SENSITIVITY <output id="sensitivity-label">${Math.round(s.sensitivity*100)}%</output></label><input id="sensitivity" type="range" min="20" max="100" value="${Math.round(s.sensitivity*100)}" data-setting="sensitivity"/></div><div class="setting"><label for="volume">SOUND VOLUME <output id="volume-label">${Math.round(s.volume*100)}%</output></label><input id="volume" type="range" min="0" max="100" value="${Math.round(s.volume*100)}" data-setting="volume"/></div><div class="setting"><label class="toggle-row"><span>GAME SOUNDS</span><input type="checkbox" data-setting="sound" ${s.sound?'checked':''}/></label></div><div class="setting"><label class="toggle-row"><span>REAL-TIME SHADOWS</span><input type="checkbox" data-setting="shadows" ${s.shadows?'checked':''}/></label></div><div class="setting"><label class="toggle-row"><span>ON-ROAD GUIDE ARROWS<small class="setting-subtitle">Soft blue arrows along your route</small></span><input type="checkbox" data-setting="roadGuides" ${s.roadGuides?'checked':''}/></label></div></div><div class="panel-note">Settings are saved automatically on this device. A faster graphics preset can help mobile battery life.</div><button data-action="back" class="primary-cta compact">${icon.check} SAVE & RETURN</button></main>`;
   }
   renderGarage(){const s=this.game.save;
     this.root.innerHTML=`<div class="panel-wash"></div><main class="panel garage-panel">${this.header('The Garage','Collect your dream fleet. Paint every car for free.')}<div class="garage-top"><div class="money-pill">WALLET <strong>${formatMoney(s.cash)}</strong></div><span>${s.owned.length} / ${VEHICLES.length} VEHICLES OWNED</span></div><div class="car-grid">${VEHICLES.map(v=>{
@@ -50,7 +50,34 @@ export class UI{
       <button type="button" data-action="dismiss-fullscreen-help" aria-label="Close fullscreen help">GOT IT</button>`;
     this.root.querySelector('#hud')?.appendChild(modal);
   }
-  renderHUD(){this.root.innerHTML=`<div id="hud"><div class="hud-top"><div class="hud-objective"><div class="hud-objective-label">NAVIGATION <span id="route-status">FREE ROAM</span></div><div class="route-primary"><div id="route-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 21 22l-9-5-9 5Z"/></svg></div><div class="route-copy"><b id="route-turn">FIND A RIDE</b><span id="route-meter">Follow the golden road guides</span></div></div><div id="objective" class="objective-line">EXPLORE THE CITY</div><div id="distance" class="objective-distance">Find a golden passenger marker</div></div><div class="hud-actions"><div id="cash" class="hud-cash">${formatMoney(this.game.save.cash)}</div><button type="button" class="hud-icon" data-action="camera-next" aria-label="Change camera" title="Change camera">${svgIcon('camera')}</button><button type="button" class="hud-icon" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">${svgIcon('fullscreen')}</button><button type="button" class="hud-icon" data-action="pause" aria-label="Pause" title="Pause">${svgIcon('pause')}</button></div></div><div class="mini-map-wrap"><canvas id="minimap" width="152" height="152" aria-label="Minimap"></canvas><span>LIVE MAP</span></div><div id="interact-prompt" class="interact-prompt hidden"><button type="button" data-action="interact" class="interact-button" aria-label="Pick up passenger">${svgIcon('passenger')}</button><span class="interact-caption" aria-live="polite">Pick up passenger</span></div><div id="toast" class="toast hidden"></div><div class="hud-bottom"><div class="hud-speed"><b id="speed">0</b><span>KM/H</span><div id="camera-label">CHASE CAM</div></div><div class="touch-pad drive-pad" aria-label="Driving controls"><div class="touch-steer"><button type="button" data-drive="left" aria-label="Steer left" title="Steer left">${svgIcon('left')}</button><button type="button" data-drive="right" aria-label="Steer right" title="Steer right">${svgIcon('right')}</button></div><div class="touch-pedals"><button type="button" data-drive="brake" class="brake" aria-label="Brake and reverse" title="Brake and reverse">${svgIcon('brake')}</button><button type="button" data-drive="gas" class="gas" aria-label="Accelerate" title="Accelerate">${svgIcon('gas')}</button></div></div><div class="hud-help">WASD / ARROWS &nbsp;•&nbsp; C CAMERA &nbsp;•&nbsp; E PICKUP &nbsp;•&nbsp; R RECOVER</div></div></div>`;
+  renderHUD(){this.root.innerHTML=`<div id="hud">
+    <div class="hud-top">
+      <div class="hud-objective" aria-label="Direction to destination">
+        <div id="route-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 21 22l-9-5-9 5Z"/></svg></div>
+        <span id="route-meter">-- m</span>
+        <span id="route-turn" class="visually-hidden">STRAIGHT</span>
+      </div>
+      <div class="hud-actions">
+        <button type="button" class="hud-icon" data-action="camera-next" aria-label="Change camera" title="Change camera">${svgIcon('camera')}</button>
+        <button type="button" class="hud-icon" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">${svgIcon('fullscreen')}</button>
+        <button type="button" class="hud-icon" data-action="pause" aria-label="Pause" title="Pause">${svgIcon('pause')}</button>
+      </div>
+    </div>
+    <div class="hud-speed" aria-label="Speed in kilometers per hour"><b id="speed">0</b><span>km/h</span></div>
+    <div class="mini-map-wrap"><canvas id="minimap" width="152" height="152" aria-label="Minimap"></canvas></div>
+    <div id="interact-prompt" class="interact-prompt hidden"><button type="button" data-action="interact" class="interact-button" aria-label="Pick up passenger" title="Pick up passenger">${svgIcon('passenger')}</button></div>
+    <div id="toast" class="toast hidden"></div>
+    <div class="hud-bottom"><div class="touch-pad drive-pad" aria-label="Driving controls">
+      <div class="touch-steer">
+        <button type="button" data-drive="left" aria-label="Steer left" title="Steer left">${svgIcon('left')}</button>
+        <button type="button" data-drive="right" aria-label="Steer right" title="Steer right">${svgIcon('right')}</button>
+      </div>
+      <div class="touch-pedals">
+        <button type="button" data-drive="brake" class="brake" aria-label="Brake and reverse" title="Brake and reverse">${svgIcon('brake')}</button>
+        <button type="button" data-drive="gas" class="gas" aria-label="Accelerate" title="Accelerate">${svgIcon('gas')}</button>
+      </div>
+    </div></div>
+  </div>`;
     this.minimap=this.root.querySelector('#minimap');this.mmctx=this.minimap?.getContext('2d');this.updateHUD(true);
   }
   updateHUD(force=false){if(this.screen!=='playing'||!this.game.player)return;
@@ -58,21 +85,23 @@ export class UI{
     const q=id=>this.root.querySelector('#'+id);
     q('speed').textContent=Math.round(this.game.player.horizontalSpeed*3.6);
     const hint=this.game.navigation?.direction;
-    q('route-status').textContent=mission.active?'AIRPORT DROP-OFF':'PASSENGER PICKUP';
-    q('route-turn').textContent=hint?hint.direction:'FIND A RIDE';
-    q('route-meter').textContent=hint?`${Math.round(hint.turnDistance)}m to next waypoint · ${Math.round(hint.remaining)}m left`:'Follow the road markers';
+    const metres=target?Math.round(Math.hypot(p[0]-target.pos[0],p[2]-target.pos[1])):0;
+    const arrived=metres<9;
+    q('route-meter').textContent=target?(arrived?'0 m':metres+' m'):'-- m';
+    q('route-turn').textContent=arrived?'ARRIVED':(hint?.direction||'STRAIGHT');
     q('route-arrow').style.transform=hint?`rotate(${-hint.relative*180/Math.PI}deg)`:'rotate(0deg)';
-    q('cash').textContent=formatMoney(this.game.save.cash);
-    q('camera-label').textContent=this.game.cameraMode.mode.toUpperCase()+' CAM';
-    q('objective').textContent=mission.active?'✈ '+target.label.toUpperCase():target?'◈ '+target.label.toUpperCase():'EXPLORE THE CITY';
-    q('distance').textContent=target?Math.round(Math.hypot(p[0]-target.pos[0],p[2]-target.pos[1]))+' M AWAY'+(mission.active?' • AIRPORT DROP-OFF':' • PASSENGER PICKUP'):'FREE ROAM';
+    const navigation=this.root.querySelector('.hud-objective');
+    navigation.dataset.destination=mission.active?'airport':'passenger';
+    navigation.setAttribute('aria-label',target?
+      `${mission.active?'Airport drop-off':'Passenger pickup'}: ${target.label}, ${metres} meters, ${arrived?'arrived':hint?.direction||'follow arrow'}`:'Free driving');
     const prompt=q('interact-prompt');
     const actionable=nearest||atAirport;
     prompt.classList.toggle('hidden',!actionable);
     if(actionable){
       const label=atAirport?'Drop off passengers':`Pick up ${nearest.passengers} passenger${nearest.passengers===1?'':'s'}`;
       prompt.querySelector('button').setAttribute('aria-label',label);
-      prompt.querySelector('.interact-caption').textContent=label;
+      prompt.querySelector('button').setAttribute('title',label);
+      prompt.dataset.actionType=atAirport?'dropoff':'pickup';
     }
     this.drawMap(p,target);
   }

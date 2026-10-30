@@ -26,6 +26,17 @@ try {
   assert.ok(await page.locator('#game canvas').count()>0,'Expected rendered canvas');
   assert.ok(await page.locator('#route-arrow svg').count()>0,'Expected GPS route arrow');
   assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');
+  assert.equal(await page.locator('.hud-help,.hud-objective-label,.objective-line,.objective-distance,.interact-caption,#camera-label,.route-copy').count(),0,
+    'The driving HUD should not include verbose labels');
+  const guideState=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;
+    return {enabled:g.save.settings.roadGuides,count:g.navigation.guideMesh.count,visible:g.navigation.group.visible};
+  });
+  assert.ok(guideState.enabled&&guideState.count>0&&guideState.visible,
+    'Default blue road helper arrows should be enabled and visible: '+JSON.stringify(guideState));
+  await page.evaluate(()=>window.__GOGOGO_DEBUG__.changeSetting('roadGuides',false));
+  assert.equal(await page.evaluate(()=>window.__GOGOGO_DEBUG__.navigation.group.visible),false,'Road guides should hide immediately');
+  await page.evaluate(()=>window.__GOGOGO_DEBUG__.changeSetting('roadGuides',true));
   await page.waitForTimeout(450);
   const guidance=(await page.locator('#route-turn').innerText()).trim();
   assert.ok(guidance.length>0&&guidance!=='FIND A RIDE','Route planner should guide to a pickup; got '+guidance);
@@ -105,10 +116,21 @@ try {
   });
   const prompt=page.locator('#interact-prompt'),meter=page.locator('.hud-speed');
   assert.ok(!(await prompt.evaluate(el=>el.classList.contains('hidden'))),'Expected pickup action at passenger location');
-  const [p,m,pedals]=await Promise.all([prompt.boundingBox(),meter.boundingBox(),page.locator('.touch-pedals').boundingBox()]);
   const overlaps=(a,b)=>a&&b&&a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
-  assert.ok(!overlaps(p,m),'Passenger action must not overlap speedometer: '+JSON.stringify({p,m}));
-  assert.ok(!overlaps(p,pedals),'Passenger action must not overlap pedals: '+JSON.stringify({p,pedals}));
+  for(const size of [{width:844,height:390},{width:667,height:375},{width:390,height:844},{width:320,height:640}]){
+    await page.setViewportSize(size);
+    const [p,m,pedals,steer,nav,actions]=await Promise.all([
+      prompt.boundingBox(),meter.boundingBox(),
+      page.locator('.touch-pedals').boundingBox(),page.locator('.touch-steer').boundingBox(),
+      page.locator('.hud-objective').boundingBox(),page.locator('.hud-actions').boundingBox()
+    ]);
+    for(const [name,a,b] of [['passenger/speed',p,m],['passenger/pedals',p,pedals],
+      ['speed/pedals',m,pedals],['speed/steering',m,steer],['speed/navigation',m,nav],
+      ['speed/action-icons',m,actions]]){
+      assert.ok(!overlaps(a,b),size.width+'x'+size.height+' '+name+' overlap: '+JSON.stringify({a,b}));
+    }
+  }
+  await page.setViewportSize({width:844,height:390});
   await page.screenshot({path:'game-mobile-passenger-smoke.png',timeout:18000});
   const reacted=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,v=g.missions.pickups[0].visual;
