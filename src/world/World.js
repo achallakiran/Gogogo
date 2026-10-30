@@ -4,6 +4,7 @@ import {AIRPORT,PICKUPS} from '../core/config.js';
 import {attachTerrainCollider} from './terrainCollider.js';
 import {createVoxelFacade,batchStaticScenery} from './Visuals.js';
 import {populateStreetLife} from './StreetLife.js';
+import {populateLandmarks} from './CityLandmarks.js';
 
 const materialCache=new Map();
 const MAT = (color, opts={})=>{
@@ -17,7 +18,22 @@ const MAT = (color, opts={})=>{
   }
   return mat;
 };
-const roadMat=MAT('#334455'), roadAlt=MAT('#425469'), curbMat=MAT('#e9dcd0'), grass=MAT('#83bd8d');
+function asphaltTexture(){
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#485057';ctx.fillRect(0,0,128,128);
+  let seed=2371;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  // Organic grain and chipped asphalt. Texture is tiled in world-space, so
+  // there is no seam or sliding effect as the vehicle moves.
+  for(let i=0;i<2600;i++){
+    const v=45+Math.floor(rand()*52),alpha=.08+rand()*.28;
+    ctx.fillStyle=`rgba(${v},${v+1},${v+2},${alpha})`;
+    ctx.fillRect(Math.floor(rand()*128),Math.floor(rand()*128),1+rand()*2,1+rand()*2);
+  }
+  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;return tex;
+}
+const roadMat=new THREE.MeshLambertMaterial({color:'#ffffff',map:asphaltTexture()});
+const roadAlt=MAT('#58636b'), curbMat=MAT('#e9dcd0'), grass=MAT('#83bd8d');
 const white=MAT('#f5e8bd',{emissive:'#56482e',emissiveIntensity:.22});
 const dark=MAT('#182a3d');
 const windowMats=[MAT('#a9edff',{emissive:'#25699d',emissiveIntensity:.42,roughness:.25,metalness:.35}),MAT('#ffdf99',{emissive:'#a86225',emissiveIntensity:.44,roughness:.3})];
@@ -63,16 +79,16 @@ export function roadSegments(crossings,start,end,halfGap){
   return out.filter(([a,b])=>b-a>.05);
 }
 function strip(scene,orientation,center,start,end,width,material,layer=.105){
-  const n=Math.ceil((end-start)/3),v=[],indices=[];
+  const n=Math.ceil((end-start)/3),v=[],indices=[],uv=[];
   for(let i=0;i<=n;i++){
     const a=start+(end-start)*i/n;
     for(const b of [-width/2,width/2]){
       const x=orientation==='x'?a:center+b,z=orientation==='x'?center+b:a;
-      v.push(x,terrainHeight(x,z)+layer,z);
+      v.push(x,terrainHeight(x,z)+layer,z);uv.push(x*.13,z*.13);
     }
   }
   for(let i=0;i<n;i++){const t=i*2;if(orientation==='x')indices.push(t,t+1,t+2,t+1,t+3,t+2);else indices.push(t,t+2,t+1,t+1,t+2,t+3);}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(indices);g.computeVertexNormals();const m=new THREE.Mesh(g,material);m.receiveShadow=true;scene.add(m);
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const m=new THREE.Mesh(g,material);m.receiveShadow=true;scene.add(m);
 }
 function buildRoads(scene){
   const xlines=[-240,-180,-120,-60,0,60,120,180,240];
@@ -219,7 +235,7 @@ export function createWorld(scene,physics){
   sun.shadow.camera.left=-210;sun.shadow.camera.right=210;sun.shadow.camera.top=210;sun.shadow.camera.bottom=-210;sun.shadow.camera.far=410;
   sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);
   const skyG=new THREE.SphereGeometry(210,12,8);const skyM=MAT('#fff0b9',{emissive:'#f5db90',emissiveIntensity:.7});const sunBall=new THREE.Mesh(skyG,skyM);sunBall.position.set(-550,620,-680);scene.add(sunBall);
-  terrain(scene,physics);buildRoads(scene);const occluders=buildings(scene,physics);airport(scene,physics);details(scene);const streetLife=populateStreetLife(scene,terrainHeight);
+  terrain(scene,physics);buildRoads(scene);const occluders=buildings(scene,physics);airport(scene,physics);details(scene);const streetLife=populateStreetLife(scene,terrainHeight);const landmarkCount=populateLandmarks(scene,terrainHeight);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife};
+  return {sun,hemi,occluders,batches,streetLife,landmarkCount};
 }
