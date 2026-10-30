@@ -230,6 +230,26 @@ try {
     g.renderer.render(g.scene,g.camera);
   });
   await page.screenshot({path:'game-road-damage-smoke.png',timeout:18000});
+  // Repeatable visual review of the new countryside driving environment.
+  await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,r=g.environment.regionalRoads.roads[2];
+    const mid=Math.floor(r.rows*.50),stride=r.columns+1;
+    const at=mid*stride+Math.floor(r.columns/2);
+    const ahead=(mid+2)*stride+Math.floor(r.columns/2);
+    const x=r.positions[at*3],z=r.positions[at*3+2];
+    const dx=r.positions[ahead*3]-x,dz=r.positions[ahead*3+2]-z;
+    const yaw=Math.atan2(-dx,-dz);
+    g.player.reset([x,2,z],yaw);
+    g.player.capturePhysicsPose(true);
+    g.player.sync(.016,1);
+    g.cameraMode.initial=true;
+    g.cameraMode.setMode('chase');
+    g.cameraMode.update(g.player,.016);
+    g.navigation.group.visible=false;
+    g.renderer.render(g.scene,g.camera);
+  });
+  await page.screenshot({path:'game-country-road-smoke.png',timeout:18000});
+
 
   const damageDrive=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,p=g.player;
