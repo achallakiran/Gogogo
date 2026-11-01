@@ -6,7 +6,7 @@ export class Sounds{
     try{
       if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();
       if(this.ctx.state==='suspended')this.ctx.resume();
-      const now=this.ctx.currentTime;const tones=type==='reward'?[660,880,1060]:type==='pickup'?[440,650]:type==='error'?[170,130]:[500];
+      const now=this.ctx.currentTime;const tones=type==='reward'?[660,880,1060]:type==='pickup'?[440,650]:type==='error'?[170,130]:type==='crash'?[95,66,43]:[500];
       tones.forEach((freq,i)=>{
         const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,now+i*.07);
         gain.gain.setValueAtTime(.0001,now+i*.07);gain.gain.exponentialRampToValueAtTime(.06*this.volume,now+i*.07+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+i*.07+.18);

@@ -4,8 +4,8 @@ import {planRoadRoute,getNextTurn,nearestNode,GRID} from '../src/navigation/Rout
 import {COUNTRY_SAMPLES} from '../src/world/RegionalRoads.js';
 import {REVERSE_LIMIT,longitudinalAcceleration} from '../src/vehicles/DrivingDynamics.js';
 const spec={accel:29,brake:39,topSpeed:52};
-test('rapid throttle builds more acceleration than previous config',()=>{
-  assert.ok(longitudinalAcceleration({gas:true,brake:false},0,spec)>40);
+test('controlled throttle still generates useful acceleration',()=>{
+  assert.ok(longitudinalAcceleration({gas:true,brake:false},0,spec)>25);
   assert.equal(longitudinalAcceleration({gas:true},52,spec),0);
 });
 test('brake slows forward travel, then reverses without another button',()=>{

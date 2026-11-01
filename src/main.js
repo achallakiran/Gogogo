@@ -11,12 +11,15 @@ import {Navigator} from './navigation/Navigator.js';
 import {Input} from './core/Input.js';
 import {UI} from './ui/UI.js';
 import {Sounds} from './audio/Sounds.js';
+import {surfaceInfoAt} from './world/SurfaceSystem.js';
+import {rideQualityAfterStep,creditedFare,applyImpact} from './gameplay/RideQuality.js';
+import {safeImpactDamage,safeRepairCost} from './vehicles/DrivingFeel.js';
 import {VEHICLES,DEFAULT_SAVE,loadSave,saveGame,formatMoney,purchaseVehicle} from './core/config.js';
 
 class Game{
   constructor(){
     this.container=document.getElementById('game');this.save=loadSave();this.input=new Input();this.sounds=new Sounds();this.sounds.configure(this.save.settings);
-    this.player=null;this.missions=null;this.world=null;this.scene=null;this.renderer=null;this.cameraMode=null;this.t=0;this.accumulator=0;this.lastSave=0;this.ui=new UI(this);
+    this.player=null;this.missions=null;this.world=null;this.scene=null;this.renderer=null;this.cameraMode=null;this.t=0;this.accumulator=0;this.lastSave=0;this.happiness=100;this.lastImpactAt=-99;this.collisionEvents=null;this.ui=new UI(this);
     this.tick=this.tick.bind(this);
     window.addEventListener('resize',()=>this.resize());
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.ui.screen==='playing')this.pause();});
@@ -42,6 +45,7 @@ class Game{
     try{
       await RAPIER.init();
       this.world=new RAPIER.World({x:0,y:-9.81,z:0});this.world.timestep=1/60;
+       this.collisionEvents=new RAPIER.EventQueue(true);
       this.scene=new THREE.Scene();
       this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
       this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.10;
@@ -60,6 +64,7 @@ class Game{
     if(this.player)this.player.dispose();
     const spec=VEHICLES.find(v=>v.id===this.save.selected)||VEHICLES[0];
     this.player=new Vehicle(this.scene,this.world,spec,this.save.colors[spec.id]||spec.color,pos,heading);
+    this.player.condition=this.save.condition?.[spec.id]??100;
     if(this.cameraMode)this.cameraMode.initial=true;
     // Newly spawned or purchased cars always have a safe recovery reference.
     this.lastGroundedPose={x:pos[0],z:pos[2],heading};
@@ -67,6 +72,7 @@ class Game{
   onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title'&&this.cameraMode)this.cameraMode.initial=true;}
   start(newGame=false){
     if(newGame){const settings={...this.save.settings};this.save=DEFAULT_SAVE();this.save.settings=settings;this.missions.cancel();}
+    this.happiness=100;
     const p=this.save.position;
     this.spawnPlayer(this.save.hasPlayed?[p[0],Math.max(p[1],terrainHeight(p[0],p[2])+2),p[2]]:[0,2,0],this.save.heading||0);
     this.save.hasPlayed=true;this.persist();this.cameraMode.setMode(this.save.settings.camera);
@@ -74,7 +80,7 @@ class Game{
   }
   pause(){if(this.ui.screen!=='playing')return;this.persist();this.ui.go('paused','playing');}
   resume(){this.ui.go('playing','paused');this.input.clear();this.cameraMode.initial=true;}
-  toTitle(){this.persist();this.missions.cancel();this.ui.toTitle();}
+  toTitle(){this.persist();this.missions.cancel();this.happiness=100;this.ui.toTitle();}
   async toggleFullscreen(force=false){
     const nativeFull=document.fullscreenElement||document.webkitFullscreenElement;
     if(nativeFull){
@@ -151,12 +157,41 @@ class Game{
   interact(){if(this.ui.screen!=='playing')return;
     if(this.player.horizontalSpeed>3.5){this.ui.toast('Slow down to pick up or drop off passengers.','warn');this.sounds.play('error');return;}
     const result=this.missions.interact(this.player.position,this.player.spec.capacity);
-    if(result.type==='picked'){this.ui.toast(`${result.mission.passengers} passenger${result.mission.passengers===1?'':'s'} aboard! Head for Skyport ✈`);this.sounds.play('pickup');}
+    if(result.type==='picked'){this.happiness=100;this.ui.toast(`${result.mission.passengers} passenger${result.mission.passengers===1?'':'s'} aboard! Head for Skyport ✈`);this.sounds.play('pickup');}
     else if(result.type==='completed'){
-      this.save.cash+=result.amount;this.save.earned+=result.amount;this.save.trips++;
-      this.ui.toast(`Airport trip complete! +${formatMoney(result.amount)} 🎉`);this.ui.showEarnings(result.amount);this.sounds.play('reward');this.persist();
+      const adjusted=creditedFare(result.amount,this.happiness,this.player.condition);
+      this.save.cash+=adjusted;this.save.earned+=adjusted;this.save.trips++;
+      this.ui.toast(`Ride complete · Happiness ${Math.round(this.happiness)}% · +${formatMoney(adjusted)}`);
+      this.ui.showEarnings(adjusted);this.sounds.play('reward');this.persist();
+      this.happiness=100;
     }else if(result.type==='capacity'){this.ui.toast(`This group needs ${result.needed} seats. Try another vehicle.`,'warn');this.sounds.play('error');}
     else this.ui.toast('Move closer to a passenger or airport marker.','warn');
+  }
+  recordCollision(speed){
+    if(this.ui.screen!=='playing'||this.t-this.lastImpactAt<1.15)return;
+    const damage=safeImpactDamage(speed,this.player.condition);
+    if(!damage)return;
+    this.lastImpactAt=this.t;
+    const changed=applyImpact(this.player.condition,this.happiness,damage);
+    this.player.condition=changed.condition;
+    this.save.condition[this.save.selected]=changed.condition;
+    if(this.missions.active)this.happiness=changed.happiness;
+    this.sounds.play('crash');
+    this.ui.toast(`Collision! -${damage}% vehicle condition`,'warn');
+    this.persist();
+  }
+  repair(id){
+    if(!this.save.owned.includes(id))return {ok:false,message:'Car not owned'};
+    const spec=VEHICLES.find(v=>v.id===id),current=this.save.condition[id]??100;
+    const cost=safeRepairCost(current,spec);
+    if(!cost)return {ok:false,message:'This car is already in excellent condition.'};
+    if(this.save.cash<cost)return {ok:false,message:`Repair costs ${formatMoney(cost)}. Earn more taxi fares.`};
+    const next={...this.save,cash:this.save.cash-cost,condition:{...this.save.condition,[id]:100}};
+    if(!saveGame(next))return {ok:false,message:'Could not save repair. Try again.'};
+    this.save=next;
+    if(this.player?.spec.id===id)this.player.condition=100;
+    this.sounds.play('reward');
+    return {ok:true,message:`Repaired ${spec.name} for ${formatMoney(cost)}.`};
   }
   buy(id){
     const purchase=purchaseVehicle(this.save,id,{select:!this.missions?.active});
@@ -226,7 +261,22 @@ class Game{
       while(this.accumulator>=step&&substeps<14){
         this.player.drive(this.input,step,this.save.settings);
         this.traffic.update(step,this.player);
-        this.world.step();
+        const speedBeforeImpact=this.player.horizontalSpeed;
+        this.world.step(this.collisionEvents);
+        this.collisionEvents.drainCollisionEvents((a,b,started)=>{
+          if(!started||!this.player?.chassisCollider)return;
+          if(a===this.player.chassisCollider.handle||b===this.player.chassisCollider.handle)
+            this.recordCollision(speedBeforeImpact);
+        });
+        if(this.missions.active){
+          const v=this.player.body.linvel(),pos=this.player.position;
+          this.happiness=rideQualityAfterStep(this.happiness,{
+            speed:this.player.horizontalSpeed,
+            yawRate:this.player.body.angvel().y,
+            verticalSpeed:v.y,
+            surface:surfaceInfoAt(pos[0],pos[2]),vehicle:this.player.spec
+          },step);
+        }
         this.player.stabilizeAfterStep();
         this.player.capturePhysicsPose();
         this.accumulator-=step;substeps++;

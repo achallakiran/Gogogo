@@ -218,3 +218,18 @@
 .purchase-dialog .primary-cta,.purchase-dialog .menu-button{width:100%;justify-content:center}
 .purchase-dialog .menu-button{margin-top:9px}
 @media(max-height:430px){.purchase-dialog{padding:16px}.purchase-dialog h3{font-size:19px;margin:8px 0}.purchase-dialog p{margin-bottom:10px}}
+
+/* Compact economy HUD: car damage remains visible outside taxi missions. */
+#hud .hud-wallet{pointer-events:none}
+#hud .drive-meter{margin-top:7px;display:flex;flex-direction:column;gap:3px;width:100%}
+#hud .drive-meter>span{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:8px;font-weight:850;letter-spacing:.07em;color:#dfedf2}
+#hud .drive-meter output{font-size:10px;color:#fff;font-weight:900}
+#hud .drive-meter-track{width:100%;height:5px;border-radius:20px;overflow:hidden;background:#324a5d}
+#hud .drive-meter-track i{display:block;height:100%;width:100%;background:#70ddad;border-radius:20px;transition:width .25s}
+#hud .drive-meter-track i[data-level="warn"]{background:#ffca63}
+#hud .drive-meter-track i[data-level="critical"]{background:#f26f63}
+#hud #happiness-meter.inactive{opacity:.45}
+.garage-condition{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:12px;font-size:10px;font-weight:850;color:#c5e5dd}
+.garage-condition strong{color:#ffd078}
+.garage-condition button{font-size:10px;background:#2d5f60;border:1px solid #9ad5cd;color:#effff7;padding:5px;border-radius:7px}
+@media(pointer:coarse){#hud .drive-meter{margin-top:4px}#hud .drive-meter>span{font-size:7px}#hud .drive-meter output{font-size:9px}}

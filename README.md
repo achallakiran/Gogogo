@@ -1,3 +1,14 @@
+## v0.5 Driving and passenger satisfaction
+
+- All owned vehicles share a physical traction model across asphalt, gravel, dirt, grass, rock and mud, with SUV and monster-truck advantages.
+- The outskirts have additional physical undulation and terrain-tint variation.
+- Translucent route breadcrumbs replace long road arrows.
+- Chassis collisions cause persistent per-vehicle damage; faster impacts cost more health.
+- Current passengers lose happiness from rough terrain, hard turns, speed, bounce and collisions; happiness and vehicle condition reduce actual paid fares.
+- The garage displays condition and offers paid repairs using earned money, with local-save migration preserving old progress.
+
+---
+
 ## Standalone offline HTML (v0.4)
 
 After `npm run build`, run `npm run offline` to generate `dist/Gogogo-offline.html`.

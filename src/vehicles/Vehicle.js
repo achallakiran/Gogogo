@@ -84,7 +84,7 @@ export class Vehicle{
     this.throttle=THREE.MathUtils.damp(this.throttle,input.gas?1:0,3.2,dt);
     const driveInput={gas:!!input.gas,brake:!!input.brake};
     let accel=longitudinalAcceleration(driveInput,forwardSpeed,spec);
-    if(input.gas&&!input.brake)accel*=.30+.70*this.throttle;
+    if(input.gas&&!input.brake)accel*=(.30+.70*this.throttle)*(.70+.30*(this.condition??100)/100);
     const speedLimit=spec.topSpeed*surface.speedRatio;
     if(forwardSpeed>speedLimit&&accel>0)accel=0;
     // Ground resistance makes cross-country shortcuts slower and rougher,

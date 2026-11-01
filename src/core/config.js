@@ -34,7 +34,7 @@ export const PICKUPS = [
 ];
 export const AIRPORT = {pos:[380,-120],name:'Skyport International'};
 export const DEFAULT_SETTINGS = {quality:'auto',sound:true,volume:0.55,sensitivity:0.65,camera:'chase',shadows:true,roadGuides:true};
-export const DEFAULT_SAVE = () => ({version:1,cash:0,earned:0,trips:0,owned:['taxi'],selected:'taxi',colors:{taxi:COLORS[0].hex},position:[0,2,0],heading:0,hasPlayed:false,settings:{...DEFAULT_SETTINGS}});
+export const DEFAULT_SAVE = () => ({version:1,cash:0,earned:0,trips:0,owned:['taxi'],selected:'taxi',colors:{taxi:COLORS[0].hex},condition:{taxi:100},position:[0,2,0],heading:0,hasPlayed:false,settings:{...DEFAULT_SETTINGS}});
 export function formatMoney(n){return '$'+Math.round(n).toLocaleString('en-US');}
 export function distance2(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
 export function tripReward(start, end, bonus=0){return Math.round(160 + distance2(start,end)*1.3 + bonus);}
@@ -50,6 +50,12 @@ export function loadSave(){
     out.owned=Array.isArray(raw.owned)?[...new Set(raw.owned.filter(x=>VEHICLES.some(v=>v.id===x)))]:['taxi'];
     if(!out.owned.includes('taxi'))out.owned.unshift('taxi');
     if(!out.owned.includes(out.selected))out.selected='taxi';
+    const storedCondition=raw.condition&&typeof raw.condition==='object'&&!Array.isArray(raw.condition)?raw.condition:{};
+    out.condition={};
+    for(const v of VEHICLES)if(out.owned.includes(v.id)){
+      const old=storedCondition[v.id];
+      out.condition[v.id]=Number.isFinite(old)?Math.max(0,Math.min(100,Math.round(old))):100;
+    }
     out.settings={...DEFAULT_SETTINGS,...raw.settings};
     return out;
   }catch{return DEFAULT_SAVE();}
@@ -68,6 +74,6 @@ export function purchaseVehicle(save,id,{select=true}={}){
     ...save,cash:save.cash-spec.price,
     owned:[...save.owned,id],
     selected:select?id:save.selected,
-    colors:{...save.colors,[id]:spec.color}
+    colors:{...save.colors,[id]:spec.color},condition:{...save.condition,[id]:100}
   }};
 }
