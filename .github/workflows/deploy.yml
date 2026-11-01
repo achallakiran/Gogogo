@@ -29,6 +29,8 @@ jobs:
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
+      - name: Generate standalone offline HTML
+        run: npm run offline
       - name: Browser smoke test (real WebAssembly and WebGL)
         run: |
           ln -s dist "${{ github.event.repository.name }}"
@@ -40,6 +42,15 @@ jobs:
             sleep 1
           done
           npm run smoke
+      - name: Verify standalone offline HTML from file URL
+        run: npm run offline-smoke
+      - name: Upload standalone offline HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gogogo-standalone-offline
+          path: dist/Gogogo-offline.html
+          if-no-files-found: ignore
       - name: Upload game playtest screenshots
         if: always()
         uses: actions/upload-artifact@v4

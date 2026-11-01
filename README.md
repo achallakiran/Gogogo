@@ -1,3 +1,12 @@
+## Standalone offline HTML (v0.4)
+
+After `npm run build`, run `npm run offline` to generate `dist/Gogogo-offline.html`.
+This is a self-contained game file for opening directly with `file://` on a desktop or mobile browser, with bundled JavaScript, CSS and embedded Rapier WebAssembly.
+GitHub Actions verifies the file using a real Chromium `file://` browser test, uploads it as the `gogogo-standalone-offline` artifact, and publishes it at `https://achallakiran.github.io/Gogogo/Gogogo-offline.html`.
+No CDN, internet services or game server are required to play the offline file. Player saves use the browser's locally available storage.
+
+---
+
 ## v0.4 beta — Economy and vehicle purchase reliability
 
 - Taxi fares now have browser smoke coverage from pickup to airport, visible wallet update, purchase and saved ownership.

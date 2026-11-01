@@ -203,7 +203,9 @@
 
 /* Compact portrait devices need the speed readout below the HUD controls. */
 @media(max-width:470px) and (min-height:550px){
- #hud .hud-speed.hud-speed{top:calc(max(14px,env(safe-area-inset-top)) + 60px)!important}
+ /* Below the HUD actions and the minimap, beside rather than over the wallet. */
+ #hud .hud-speed.hud-speed{top:170px!important;left:auto!important;
+  right:max(13px,env(safe-area-inset-right))!important;transform:none!important}
 }
 
 /* v0.4 car purchase flow: accessible, landscape-friendly confirmation and feedback. */
