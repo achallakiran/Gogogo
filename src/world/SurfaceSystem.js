@@ -19,7 +19,15 @@ export function terrainHeight(x,z){
   // visible tarmac sheets or collisions below/above the runway surface.
   const airportZone=S.smoothstep(x,345,376) *
     S.smoothstep(z,-280,-245) * (1-S.smoothstep(z,21,49));
-  const cityGround=(hills+dips+bump)*(1-airportZone);
+  // Broad, physical undulations outside the old flat urban grid. The same
+  // elevation drives rendering and Rapier, avoiding hovering fake surfaces.
+  // Keep the city, runway and established landmark corridors unchanged.
+  const ridges=outskirts*(1-airportZone)*(
+    1.2*Math.sin(x*.072+z*.018)*Math.cos(z*.065)+
+    .55*Math.sin(x*.115-z*.086)+
+    .35*Math.sin(x*.185+z*.14)
+  );
+  const cityGround=(hills+dips+bump+ridges)*(1-airportZone);
   // Only sculpt the far northern ridge. The central city and its existing
   // landmark/save coordinates remain unchanged.
   if(z<263||z>500||x<42||x>287)return cityGround;
@@ -53,7 +61,12 @@ export function surfaceInfoAt(x,z){
     (distanceX<=ROAD_SHOULDER_HALF_WIDTH && z>=-273&&z<=273)||
     (distanceZ<=ROAD_SHOULDER_HALF_WIDTH && x>=-273 && (Math.abs(z+120)<ROAD_SHOULDER_HALF_WIDTH?x<=406:x<=273)))
   );
-  return {height:terrainHeight(x,z),type:road?'asphalt':shoulder?'shoulder':'terrain',drivable:true};
+  const terrainKind=road?'asphalt':shoulder?'gravel':
+    (Math.sin(x*.047+z*.021)+Math.cos(z*.064-x*.032)>1.0?'mud':
+     Math.sin(x*.067-z*.058)>.54?'rock':
+     Math.cos(z*.033+x*.016)>.32?'dirt':'grass');
+  return {height:terrainHeight(x,z),type:road?'asphalt':shoulder?'shoulder':'terrain',
+    terrainKind,drivable:true};
 }
 
 // The visual ground and Rapier heightfield are generated from identical

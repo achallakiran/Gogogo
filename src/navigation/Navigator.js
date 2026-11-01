@@ -3,22 +3,12 @@ import {planRoadRoute,getNextTurn,distance} from './Route.js';
 import {terrainHeight} from '../world/World.js';
 import {MOUNTAIN_SAMPLES} from '../world/MountainData.js';
 
-// A few small translucent chevrons floating above the road are clearly an
-// optional game helper, not permanent painted road markings. One instanced
-// mesh means a single draw call even on phones.
-const arrowShape=new THREE.Shape();
-arrowShape.moveTo(-.32,-1.10);
-arrowShape.lineTo(.32,-1.10);
-arrowShape.lineTo(.32,.10);
-arrowShape.lineTo(.92,.10);
-arrowShape.lineTo(0,1.42);
-arrowShape.lineTo(-.92,.10);
-arrowShape.lineTo(-.32,.10);
-arrowShape.closePath();
-const arrowGeometry=new THREE.ShapeGeometry(arrowShape);
+// Subtle, floating breadcrumb pads replace duplicated road-painted chevrons.
+// Existing minimap and turn arrow remain available when guides are disabled.
+const arrowGeometry=new THREE.PlaneGeometry(.36,1.25);
 arrowGeometry.computeVertexNormals();
 const arrowMaterial=new THREE.MeshBasicMaterial({
-  color:'#62e1f8',transparent:true,opacity:.43,depthWrite:false,
+  color:'#66e9df',transparent:true,opacity:.32,depthWrite:false,
   depthTest:true,side:THREE.DoubleSide
 });
 const MAX_MARKERS=12;
@@ -117,7 +107,7 @@ export class Navigator{
   for(let i=start;i<this.samples.length&&count<MAX_MARKERS;i++){
     const s=this.samples[i],range=Math.hypot(s.x-position[0],s.z-position[1]);
     if(range>165)break;
-    dummy.position.set(s.x,terrainHeight(s.x,s.z)+.27,s.z);
+    dummy.position.set(s.x,terrainHeight(s.x,s.z)+.21,s.z);
     dummy.quaternion.setFromAxisAngle(Y_AXIS,s.yaw).multiply(baseRotation);
     dummy.scale.setScalar(1);dummy.updateMatrix();
     this.guideMesh.setMatrixAt(count++,dummy.matrix);

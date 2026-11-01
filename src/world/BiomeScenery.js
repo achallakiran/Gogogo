@@ -37,6 +37,11 @@ export function terrainTintAt(x,z,height=terrainHeight(x,z)){
  }else if(type==='valley'){
   c.lerp(turfMeadow,.48+.26*n);
   if(n<.32)c.lerp(turfRock,.21);
+ }else if(Math.max(Math.abs(x)-250,Math.abs(z)-250)>0){
+  // Patches of dry dirt, rocky scrub and low grass match rougher outskirts.
+  const rock=smooth((Math.sin(x*.067-z*.058)-.1)*1.2);
+  const dirt=smooth((Math.cos(z*.033+x*.016)-.1)*1.2);
+  c.lerp(turfMeadow,dirt*.44).lerp(turfRock,rock*.55);
  }
  c.multiplyScalar(.92+grain*.14);
  return c;
