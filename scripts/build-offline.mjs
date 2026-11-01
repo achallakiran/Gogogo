@@ -30,7 +30,11 @@ html=html.replace(/\s*<link\b[^>]*\brel="manifest"[^>]*>/gi,'');
 const icon=await readFile('public/app-icon.svg','utf8');
 html=html.replace(/\s*<link\b[^>]*\brel="icon"[^>]*>/gi,
   '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,'+Buffer.from(icon).toString('base64')+'">');
-if(/\b(?:src|href)="[^"]*\/assets\//.test(html))throw new Error('Offline HTML still references a bundle asset');
+// The production bundle may contain modulepreload hints, which are not
+// required once its modules are embedded inside this document.
+html=html.replace(/\s*<link\b[^>]*\brel="modulepreload"[^>]*>/gi,'');
+const remaining=html.match(/\b(?:src|href)="[^"]*\/assets\/[^"]+"/g);
+if(remaining)throw new Error('Offline HTML still references bundle assets: '+remaining.slice(0,8).join(', '));
 const output=join(dist,'Gogogo-offline.html');
 await writeFile(output,html,'utf8');
 console.log('Created '+output+' ('+(Buffer.byteLength(html)/1024/1024).toFixed(2)+' MiB)');
