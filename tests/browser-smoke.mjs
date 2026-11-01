@@ -23,7 +23,7 @@ try {
   // The garage must also work BEFORE the first drive.
   await page.locator('.menu-stack [data-action="garage"]').click();
   assert.equal(await page.locator('.car-card').count(),5);
-  assert.match(await page.locator('.garage-top').innerText(),/\\$0/);
+  assert.match(await page.locator('.garage-top').innerText(),/\$0/);
   await page.locator('[data-action="paint"][data-car="taxi"]').first().click();
   await page.locator('[data-action="back"]').click();
   await page.locator('[data-action="new-game"]').first().click();
@@ -493,7 +493,7 @@ try {
   assert.equal(economy.earned,economy.expected);
   assert.equal(economy.trips,3);
   assert.ok(economy.cash>=1600);
-  assert.match(economy.wallet,/\\$/);
+  assert.match(economy.wallet,/\$/);
   await page.locator('.hud-icon[data-action="garage"]').click();
   const sportsBuy=page.locator('[data-action="buy"][data-car="coupe"]');
   assert.ok(await sportsBuy.isEnabled(),'Earned fares should enable the car purchase button');
