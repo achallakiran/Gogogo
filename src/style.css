@@ -200,3 +200,14 @@
 .garage-progress{font-size:12px;color:#f7d18b;letter-spacing:.07em;font-weight:900;margin:-8px 0 18px}
 @media(pointer:coarse){#hud .hud-wallet{top:calc(max(14px,env(safe-area-inset-top)) + 54px);padding:5px 8px;min-width:108px;max-width:134px}#hud .hud-wallet strong{font-size:18px}#hud .hud-wallet small{font-size:8px}#hud .hud-wallet>span{font-size:8px}}
 @media(max-height:430px){#hud .hud-wallet{top:calc(max(8px,env(safe-area-inset-top)) + 44px)}#hud .hud-wallet strong{font-size:17px}#hud .hud-wallet small{font-size:7px}}
+
+/* v0.4 car purchase flow: accessible, landscape-friendly confirmation and feedback. */
+.garage-feedback{margin:-6px 0 17px;padding:10px 14px;border:1px solid #8fe3d688;border-radius:10px;background:#2c6b6650;color:#e6fff8;font-size:12px;font-weight:800}
+.purchase-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;background:#030c1de8;backdrop-filter:blur(9px);pointer-events:auto}
+.purchase-dialog{width:min(410px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;padding:24px;background:#112b44;border:1px solid #b4dde96b;border-radius:19px;box-shadow:0 24px 80px #000a}
+.purchase-dialog h3{font-size:27px;margin:16px 0 10px;font-weight:950}
+.purchase-dialog p{color:#d2e6ee;font-size:14px;line-height:1.6;margin-bottom:21px}
+.purchase-dialog strong{color:#ffdc8a}
+.purchase-dialog .primary-cta,.purchase-dialog .menu-button{width:100%;justify-content:center}
+.purchase-dialog .menu-button{margin-top:9px}
+@media(max-height:430px){.purchase-dialog{padding:16px}.purchase-dialog h3{font-size:19px;margin:8px 0}.purchase-dialog p{margin-bottom:10px}}

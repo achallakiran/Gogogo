@@ -20,6 +20,12 @@ try {
   const startup=page.locator('.startup-error');
   if(await startup.count())throw new Error('Game startup error: '+(await startup.innerText()).slice(0,1800));
   await page.screenshot({path:'game-title-smoke.png',timeout:15000});
+  // The garage must also work BEFORE the first drive.
+  await page.locator('.menu-stack [data-action="garage"]').click();
+  assert.equal(await page.locator('.car-card').count(),5);
+  assert.match(await page.locator('.garage-top').innerText(),/\\$0/);
+  await page.locator('[data-action="paint"][data-car="taxi"]').first().click();
+  await page.locator('[data-action="back"]').click();
   await page.locator('[data-action="new-game"]').first().click();
   await page.locator('#hud').waitFor({timeout:10000});
   await page.waitForTimeout(800);
@@ -376,7 +382,8 @@ try {
   })));
   assert.deepEqual(controls.map(c=>c.name),['left','right','brake','gas']);
   assert.ok(controls.every(c=>c.svg===1&&c.text===''&&c.selectable==='none'),JSON.stringify(controls));
-  assert.equal(await page.locator('.hud-icon svg').count(),3);
+  assert.deepEqual(await page.locator('.hud-icon').evaluateAll(els=>els.map(el=>el.dataset.action)),
+    ['fullscreen','garage','camera-next','pause'].filter(a=>document.querySelector('[data-action="'+a+'"]')));
   // Exercise a real pointer press: synthetic PointerEvents do not acquire
   // browser pointer capture and would fail the game's setPointerCapture call.
   await page.locator('.touch-pad').evaluate(el=>{el.style.display='flex';});
@@ -465,6 +472,51 @@ try {
   console.log('GATE_IMPACT',JSON.stringify(impact));
   assert.ok(impact.z< -28.0 && Math.abs(impact.x+9)<3,
     'Player car should not pass through gate pillar: '+JSON.stringify(impact));
+  // Full user-visible economy loop: pickup -> airport fare -> wallet -> purchase -> ownership.
+  const economy=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__;g.missions.cancel();
+    const before=g.save.cash;let expected=0;
+    for(const id of ['p0','p1','p2']){
+      const p=g.missions.pickups.find(x=>x.id===id);
+      g.player.reset([p.pos[0],2,p.pos[1]],0);
+      g.interact();
+      if(g.missions.active?.id!==id)throw Error('Passenger was not picked up: '+id);
+      g.player.reset([380,2,-120],0);
+      g.interact();
+      if(g.missions.active)throw Error('Airport drop-off did not complete: '+id);
+      expected+=Math.round(160+Math.hypot(p.pos[0]-380,p.pos[1]+120)*1.3+p.bonus);
+    }
+    g.ui.updateHUD(true);
+    return {before,cash:g.save.cash,earned:g.save.earned,trips:g.save.trips,expected,wallet:document.querySelector('#wallet-balance')?.textContent};
+  });
+  assert.equal(economy.cash,economy.before+economy.expected,'Taxi fares must credit the wallet exactly once');
+  assert.equal(economy.earned,economy.expected);
+  assert.equal(economy.trips,3);
+  assert.ok(economy.cash>=1600);
+  assert.match(economy.wallet,/\\$/);
+  await page.locator('.hud-icon[data-action="garage"]').click();
+  const sportsBuy=page.locator('[data-action="buy"][data-car="coupe"]');
+  assert.ok(await sportsBuy.isEnabled(),'Earned fares should enable the car purchase button');
+  await sportsBuy.click();
+  assert.equal(await page.locator('[role="dialog"] [data-action="confirm-buy"]').count(),1);
+  await page.locator('[data-action="cancel-buy"]').click();
+  assert.equal(await page.locator('[role="dialog"]').count(),0,'Cancel must not buy a car');
+  await sportsBuy.click();
+  await page.locator('[role="dialog"] [data-action="confirm-buy"]').click();
+  const purchase=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,saved=JSON.parse(localStorage.getItem('voxel-city-driver:v1'));
+    return {cash:g.save.cash,owned:g.save.owned,selected:g.save.selected,vehicle:g.player.spec.id,
+      savedCash:saved.cash,savedOwned:saved.owned,savedSelected:saved.selected,feedback:document.querySelector('.garage-feedback')?.textContent};
+  });
+  assert.equal(purchase.cash,economy.cash-1600);
+  assert.equal(purchase.savedCash,purchase.cash);
+  assert.ok(purchase.owned.includes('coupe')&&purchase.savedOwned.includes('coupe'));
+  assert.equal(purchase.selected,'coupe');
+  assert.equal(purchase.savedSelected,'coupe');
+  assert.equal(purchase.vehicle,'coupe');
+  assert.match(purchase.feedback,/purchased/i);
+  await page.locator('[data-action="back"]').click();
+  assert.equal(await page.locator('#wallet-balance').count(),1,'Garage must return to gameplay HUD');
   assert.deepEqual(errors,[],'Unexpected browser runtime errors');
   console.log('Browser smoke PASSED: desktop drive, fullscreen feedback, mobile passenger placement, pedestrian reaction.');
 } catch(e) {

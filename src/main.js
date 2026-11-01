@@ -11,7 +11,7 @@ import {Navigator} from './navigation/Navigator.js';
 import {Input} from './core/Input.js';
 import {UI} from './ui/UI.js';
 import {Sounds} from './audio/Sounds.js';
-import {VEHICLES,DEFAULT_SAVE,loadSave,saveGame,formatMoney} from './core/config.js';
+import {VEHICLES,DEFAULT_SAVE,loadSave,saveGame,formatMoney,purchaseVehicle} from './core/config.js';
 
 class Game{
   constructor(){
@@ -64,7 +64,7 @@ class Game{
     // Newly spawned or purchased cars always have a safe recovery reference.
     this.lastGroundedPose={x:pos[0],z:pos[2],heading};
   }
-  onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title')this.cameraMode.initial=true;}
+  onScreenChanged(screen){this.input.setActive(screen==='playing');if(screen==='title'&&this.cameraMode)this.cameraMode.initial=true;}
   start(newGame=false){
     if(newGame){const settings={...this.save.settings};this.save=DEFAULT_SAVE();this.save.settings=settings;this.missions.cancel();}
     const p=this.save.position;
@@ -158,16 +158,25 @@ class Game{
     }else if(result.type==='capacity'){this.ui.toast(`This group needs ${result.needed} seats. Try another vehicle.`,'warn');this.sounds.play('error');}
     else this.ui.toast('Move closer to a passenger or airport marker.','warn');
   }
-  buy(id){const spec=VEHICLES.find(v=>v.id===id);if(!spec||this.save.owned.includes(id)||this.save.cash<spec.price){this.sounds.play('error');return;}
-    this.save.cash-=spec.price;this.save.owned.push(id);this.save.colors[id]=spec.color;
-    if(!this.missions.active){this.save.selected=id;this.switchVehicle();}
-    this.persist();this.sounds.play('reward');
+  buy(id){
+    const purchase=purchaseVehicle(this.save,id,{select:!this.missions?.active});
+    if(!purchase.ok){this.sounds.play('error');return {ok:false,message:purchase.reason==='funds'?'Not enough money yet. Complete more airport rides.':'This vehicle cannot be purchased.'};}
+    // Commit to local storage before applying the in-memory change.
+    if(!saveGame(purchase.save)){this.sounds.play('error');return {ok:false,message:'Unable to save purchase. Check browser storage and try again.'};}
+    this.save=purchase.save;
+    if(this.save.selected===id)this.switchVehicle();
+    this.sounds.play('reward');
+    return {ok:true,message:VEHICLES.find(v=>v.id===id).name+' purchased! You now own '+this.save.owned.length+' cars.'};
   }
-  selectVehicle(id){if(!this.save.owned.includes(id))return;if(this.missions.active){alert('Finish or abandon your active passenger trip before switching cars.');return;}
-    this.save.selected=id;this.switchVehicle();this.persist();}
+  selectVehicle(id){
+    if(!this.save.owned.includes(id))return {ok:false,message:'This vehicle is not owned.'};
+    if(this.missions?.active)return {ok:false,message:'Finish the current passenger ride before switching vehicles.'};
+    this.save.selected=id;this.switchVehicle();this.persist();
+    return {ok:true,message:'Ready to drive '+VEHICLES.find(v=>v.id===id).name+'!'};
+  }
   switchVehicle(){const p=this.player?.position||[0,2,0],angle=this.player?.yaw||0;this.spawnPlayer([p[0],Math.max(p[1],terrainHeight(p[0],p[2])+2),p[2]],angle);}
   paint(id,color){if(!this.save.owned.includes(id)||!/^#[0-9a-f]{6}$/i.test(color))return;this.save.colors[id]=color;
-    if(this.save.selected===id)this.player.setColor(color);
+    if(this.save.selected===id)this.player?.setColor(color);
     this.persist();}
   changeSetting(k,value){if(!(k in this.save.settings))return;this.save.settings[k]=value;
     if(k==='camera')this.cameraMode.setMode(value);

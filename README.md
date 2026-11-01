@@ -1,3 +1,13 @@
+## v0.4 beta — Economy and vehicle purchase reliability
+
+- Taxi fares now have browser smoke coverage from pickup to airport, visible wallet update, purchase and saved ownership.
+- Vehicle purchase is atomic: cash and owned cars are saved together before a vehicle is switched. Failed storage writes do not spend money.
+- Garage confirms purchases, displays results, and supports car selection and free painting before starting the first drive.
+- Browser smoke testing checks garage controls by purpose, so adding an extra HUD icon no longer incorrectly blocks deployment.
+- Existing `voxel-city-driver:v1` saves are retained; no economy reset is needed.
+
+---
+
 ### Local mountain ground collision patch
 
 Some points off the mountain road could fall through the Rapier heightfield

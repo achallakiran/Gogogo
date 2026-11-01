@@ -1,4 +1,4 @@
-export const VERSION = '0.3.0-beta.1';
+export const VERSION = '0.4.0-beta.1';
 export const STORAGE_KEY = 'voxel-city-driver:v1';
 export const COLORS = [
   {name:'Sunburst', hex:'#ffc34b'},
@@ -43,11 +43,31 @@ export function loadSave(){
     const raw=JSON.parse(localStorage.getItem(STORAGE_KEY));
     if(!raw || raw.version!==1) return DEFAULT_SAVE();
     const out={...DEFAULT_SAVE(),...raw};
-    out.owned=Array.isArray(raw.owned)?raw.owned.filter(x=>VEHICLES.some(v=>v.id===x)):['taxi'];
+    out.cash=Number.isFinite(raw.cash)&&raw.cash>=0?Math.round(raw.cash):0;
+    out.earned=Number.isFinite(raw.earned)&&raw.earned>=0?Math.round(raw.earned):0;
+    out.trips=Number.isSafeInteger(raw.trips)&&raw.trips>=0?raw.trips:0;
+    out.colors=raw.colors&&typeof raw.colors==='object'&&!Array.isArray(raw.colors)?{...DEFAULT_SAVE().colors,...raw.colors}:{...DEFAULT_SAVE().colors};
+    out.owned=Array.isArray(raw.owned)?[...new Set(raw.owned.filter(x=>VEHICLES.some(v=>v.id===x)))]:['taxi'];
     if(!out.owned.includes('taxi'))out.owned.unshift('taxi');
     if(!out.owned.includes(out.selected))out.selected='taxi';
     out.settings={...DEFAULT_SETTINGS,...raw.settings};
     return out;
   }catch{return DEFAULT_SAVE();}
 }
-export function saveGame(data){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(err){console.warn('Save unavailable',err);}}
+export function saveGame(data){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));return true;}
+  catch(err){console.warn('Save unavailable',err);return false;}
+}
+// Pure, all-or-nothing purchase: the wallet and ownership update together.
+export function purchaseVehicle(save,id,{select=true}={}){
+  const spec=VEHICLES.find(v=>v.id===id);
+  if(!spec||spec.price<=0)return {ok:false,reason:'unknown'};
+  if(!Array.isArray(save.owned)||save.owned.includes(id))return {ok:false,reason:'owned'};
+  if(!Number.isFinite(save.cash)||save.cash<spec.price)return {ok:false,reason:'funds'};
+  return {ok:true,save:{
+    ...save,cash:save.cash-spec.price,
+    owned:[...save.owned,id],
+    selected:select?id:save.selected,
+    colors:{...save.colors,[id]:spec.color}
+  }};
+}
