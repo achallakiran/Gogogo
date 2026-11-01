@@ -20,11 +20,11 @@ function toAssetPath(url){
 }
 for(const item of bundledStyles){
   const css=await readFile(toAssetPath(item[1]),'utf8');
-  html=html.replace(item[0],'<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style>');
+  html=html.replace(item[0],()=>'<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style>');
 }
 for(const item of bundledScripts){
   const js=await readFile(toAssetPath(item[1]),'utf8');
-  html=html.replace(item[0],'<script type="module">'+js.replace(/<\/script/gi,'<\\/script')+'</script>');
+  html=html.replace(item[0],()=>'<script type="module">'+js.replace(/<\/script/gi,'<\\/script')+'</script>');
 }
 html=html.replace(/\s*<link\b[^>]*\brel="manifest"[^>]*>/gi,'');
 const icon=await readFile('public/app-icon.svg','utf8');
