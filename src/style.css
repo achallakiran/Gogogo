@@ -201,6 +201,11 @@
 @media(pointer:coarse){#hud .hud-wallet{top:calc(max(14px,env(safe-area-inset-top)) + 54px);padding:5px 8px;min-width:108px;max-width:134px}#hud .hud-wallet strong{font-size:18px}#hud .hud-wallet small{font-size:8px}#hud .hud-wallet>span{font-size:8px}}
 @media(max-height:430px){#hud .hud-wallet{top:calc(max(8px,env(safe-area-inset-top)) + 44px)}#hud .hud-wallet strong{font-size:17px}#hud .hud-wallet small{font-size:7px}}
 
+/* Compact portrait devices need the speed readout below the HUD controls. */
+@media(max-width:470px) and (min-height:550px){
+ #hud .hud-speed.hud-speed{top:calc(max(14px,env(safe-area-inset-top)) + 60px)!important}
+}
+
 /* v0.4 car purchase flow: accessible, landscape-friendly confirmation and feedback. */
 .garage-feedback{margin:-6px 0 17px;padding:10px 14px;border:1px solid #8fe3d688;border-radius:10px;background:#2c6b6650;color:#e6fff8;font-size:12px;font-weight:800}
 .purchase-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;background:#030c1de8;backdrop-filter:blur(9px);pointer-events:auto}
