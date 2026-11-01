@@ -1,3 +1,5 @@
+Garage showroom now uses one reusable Three.js renderer with the game's actual voxel vehicle meshes and rotating model previews of all five owned/purchasable cars. Preview navigation and paint changes update the real 3D asset.
+
 ## v0.5 Driving and passenger satisfaction
 
 - All owned vehicles share a physical traction model across asphalt, gravel, dirt, grass, rock and mud, with SUV and monster-truck advantages.

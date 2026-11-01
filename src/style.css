@@ -233,3 +233,20 @@
 .garage-condition strong{color:#ffd078}
 .garage-condition button{font-size:10px;background:#2d5f60;border:1px solid #9ad5cd;color:#effff7;padding:5px;border-radius:7px}
 @media(pointer:coarse){#hud .drive-meter{margin-top:4px}#hud .drive-meter>span{font-size:7px}#hud .drive-meter output{font-size:9px}}
+
+/* The garage shows a real spinning voxel car, not a stock image or static icon. */
+.garage-showroom{background:radial-gradient(circle at 50% 30%,#264c6b,#0e2035 75%);border:1px solid #689cb366;border-radius:16px;overflow:hidden;margin:8px 0 16px}
+.garage-showroom-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 17px 0}
+.garage-showroom-top div{display:flex;flex-direction:column;gap:3px}
+.garage-showroom-top small{color:#81ddd0;font-size:9px;font-weight:900;letter-spacing:.1em}
+.garage-showroom-top strong{font-size:17px;font-weight:950;color:#f7ffff}
+.garage-showroom-top>span{font-size:12px;font-weight:900;color:#e9c67f}
+.garage-showroom-stage{width:100%;height:175px;overflow:hidden;touch-action:pan-y}
+.garage-showroom-stage canvas{display:block;width:100%;height:100%}
+.garage-showroom-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:8px}
+.garage-showroom-nav button{font-size:25px;font-weight:800;width:44px;height:35px;border-radius:9px;border:1px solid #88b0c355;background:#2a4c66;color:#eafffa}
+.garage-showroom-nav>span{font-size:9px;color:#a6c8cf;letter-spacing:.15em;font-weight:900}
+.car-symbol{display:flex;align-items:center;gap:8px;background:transparent;border:0;color:#bdeeea;width:fit-content;max-width:100%;padding:0;height:46px}
+.car-symbol svg{width:28px;height:28px}
+.car-symbol span{font-size:9px;font-weight:900;letter-spacing:.06em}
+@media(max-height:450px){.garage-showroom-stage{height:125px}}
