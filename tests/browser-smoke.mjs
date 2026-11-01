@@ -383,7 +383,7 @@ try {
   assert.deepEqual(controls.map(c=>c.name),['left','right','brake','gas']);
   assert.ok(controls.every(c=>c.svg===1&&c.text===''&&c.selectable==='none'),JSON.stringify(controls));
   assert.deepEqual(await page.locator('.hud-icon').evaluateAll(els=>els.map(el=>el.dataset.action)),
-    ['fullscreen','garage','camera-next','pause'].filter(a=>document.querySelector('[data-action="'+a+'"]')));
+    ['garage','camera-next','fullscreen','pause'],'HUD must expose the garage, camera, fullscreen and pause controls');
   // Exercise a real pointer press: synthetic PointerEvents do not acquire
   // browser pointer capture and would fail the game's setPointerCapture call.
   await page.locator('.touch-pad').evaluate(el=>{el.style.display='flex';});
