@@ -41,7 +41,17 @@ function createHoverArrow(){
  const group=new THREE.Group(),arrow=new THREE.Mesh(shape,fill);
  arrow.renderOrder=18;
  const outline=new THREE.LineSegments(outlineGeo,edge);outline.renderOrder=19;
- group.add(arrow,outline);
+ // Lift the tip above the horizontal plane so this reads as a hologram
+ // OVER the roof, not another 2D arrow painted on the tarmac.
+ const tilted=new THREE.Group();tilted.rotation.x=.54;tilted.add(arrow,outline);
+ group.add(tilted);
+ const halo=new THREE.Mesh(new THREE.TorusGeometry(.62,.05,6,28),
+   new THREE.MeshBasicMaterial({color:'#97f2db',transparent:true,opacity:.42,depthTest:false,depthWrite:false}));
+ halo.rotation.x=Math.PI/2;halo.position.y=-.65;halo.renderOrder=17;group.add(halo);
+ const tether=new THREE.Mesh(new THREE.CylinderGeometry(.022,.045,1.1,6),
+   new THREE.MeshBasicMaterial({color:'#c9fff1',transparent:true,opacity:.23,depthTest:false,depthWrite:false}));
+ tether.position.y=-1.45;tether.renderOrder=17;group.add(tether);
+ group.userData.tilted=tilted;group.userData.halo=halo;
  group.userData.fill=fill;group.userData.edge=edge;group.userData.tipLocal=[0,0,-1.8];
  group.name='floating-car-navigation-arrow';group.visible=false;
  return group;

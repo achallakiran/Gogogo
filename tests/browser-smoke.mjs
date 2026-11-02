@@ -210,6 +210,8 @@ try {
   assert.ok(guideState.enabled&&guideState.visible&&guideState.relativeHeight>2.2&&guideState.relativeHeight<5.5,
     'Floating navigation arrow must sit above the car: '+JSON.stringify(guideState));
   assert.ok(guideState.fillOpacity>0&&guideState.fillOpacity<1,'Arrow must be translucent');
+  assert.ok(await page.evaluate(()=>window.__GOGOGO_DEBUG__.navigation.hoverArrow.userData.tilted.rotation.x>.4),
+    'Floating arrow should be pitched upward so it cannot look painted on the asphalt');
   // The tip is explicitly in local -Z and must follow the route forward.
   const orientation=await page.evaluate(()=>{
     const g=window.__GOGOGO_DEBUG__,a=g.navigation.hoverArrow;

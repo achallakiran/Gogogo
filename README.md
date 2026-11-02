@@ -1,3 +1,10 @@
+## v0.6 floating hologram arrow
+
+- The navigation arrow now pitches its forward tip upward above the car, with a faint glowing halo and a vertical tether. It remains translucent and still obeys road-route lookahead and capped smooth heading changes.
+- This corrects the visual ambiguity found during real screenshot review: the earlier horizontal arrow resembled a road marking despite being placed above the car.
+
+---
+
 ## v0.6 tactile urban asphalt
 
 - Seven distinct, real triangle-mesh-backed damaged-asphalt zones are placed across the playable city, including along the starting boulevard. Each has raised chipped edges, an irregular depressed center and variations in vertex color.
