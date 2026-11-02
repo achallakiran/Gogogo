@@ -191,29 +191,30 @@ try {
   assert.ok(await page.locator('#route-turn').count()>0,'Expected route instruction');
   assert.equal(await page.locator('.hud-help,.hud-objective-label,.objective-line,.objective-distance,.interact-caption,#camera-label,.route-copy').count(),0,
     'The driving HUD should not include verbose labels');
-  // Startup on CI's software WebGL renderer can take multiple seconds.
-  // Wait until a real gameplay tick has built its guide instances.
+  // Real-world-space guidance must be a translucent arrow ABOVE the car.
+  // Ground-mounted breadcrumbs are disabled, even when navigation is on.
   await page.waitForFunction(()=>{
     const g=window.__GOGOGO_DEBUG__;
-    return g?.navigation?.guideMesh?.count>0;
-  },null,{timeout:25000}).catch(async err=>{
-    const diag=await page.evaluate(()=>{
-      const g=window.__GOGOGO_DEBUG__;
-      return g?{frames:g.frameCount,t:g.t,screen:g.ui.screen,target:g.missions.target(g.player.position),
-        route:g.navigation.route,samples:g.navigation.samples?.length,
-        count:g.navigation.guideMesh.count,enabled:g.navigation.guidesEnabled}:null;
-    });
-    throw new Error('Guide arrow initialization timed out: '+JSON.stringify(diag)+' '+err.message);
-  });
+    return g?.navigation?.hoverArrow?.visible===true;
+  },null,{timeout:25000});
   const guideState=await page.evaluate(()=>{
-    const g=window.__GOGOGO_DEBUG__;
-    return {enabled:g.save.settings.roadGuides,count:g.navigation.guideMesh.count,visible:g.navigation.group.visible};
+    const g=window.__GOGOGO_DEBUG__,a=g.navigation.hoverArrow,p=g.player.position;
+    return {enabled:g.save.settings.roadGuides,visible:a.visible,
+      name:a.name,relativeHeight:a.position.y-p[1],position:a.position.toArray(),
+      fillOpacity:a.userData.fill.opacity,oldRoadGuides:g.navigation.group.visible,
+      groundMarkers:g.navigation.guideMesh.count};
   });
-  assert.ok(guideState.enabled&&guideState.count>0&&guideState.visible,
-    'Default blue road helper arrows should be enabled and visible: '+JSON.stringify(guideState));
+  assert.ok(guideState.enabled&&guideState.visible&&guideState.relativeHeight>3&&guideState.relativeHeight<5,
+    'Floating navigation arrow must sit above the car: '+JSON.stringify(guideState));
+  assert.ok(guideState.fillOpacity>0&&guideState.fillOpacity<1,'Arrow must be translucent');
+  assert.equal(guideState.oldRoadGuides,false,'Old road marker visuals must be removed');
+  assert.equal(guideState.groundMarkers,0,'No breadcrumb instances should be drawn on the road');
   await page.evaluate(()=>window.__GOGOGO_DEBUG__.changeSetting('roadGuides',false));
-  assert.equal(await page.evaluate(()=>window.__GOGOGO_DEBUG__.navigation.group.visible),false,'Road guides should hide immediately');
+  assert.equal(await page.evaluate(()=>window.__GOGOGO_DEBUG__.navigation.hoverArrow.visible),false,
+    'Turning off navigation guidance must hide the floating arrow immediately');
   await page.evaluate(()=>window.__GOGOGO_DEBUG__.changeSetting('roadGuides',true));
+  assert.equal(await page.evaluate(()=>window.__GOGOGO_DEBUG__.navigation.hoverArrow.visible),true,
+    'Turning navigation back on must restore the car-top arrow');
   await page.waitForTimeout(450);
   const guidance=(await page.locator('#route-turn').innerText()).trim();
   assert.ok(guidance.length>0&&guidance!=='FIND A RIDE','Route planner should guide to a pickup; got '+guidance);

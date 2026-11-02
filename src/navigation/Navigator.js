@@ -16,6 +16,42 @@ const Y_AXIS=new THREE.Vector3(0,1,0);
 const baseRotation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
 const dummy=new THREE.Object3D();
 
+// World-space translucent navigator: a single arrow FLOATING OVER THE CAR.
+// The local +Y axis of the 2D shape becomes world -Z after rotation.
+function createHoverArrow(){
+  const shape=new THREE.Shape();
+  shape.moveTo(-.34,-1.25);
+  shape.lineTo(.34,-1.25);
+  shape.lineTo(.34,.05);
+  shape.lineTo(.93,.05);
+  shape.lineTo(0,1.52);
+  shape.lineTo(-.93,.05);
+  shape.lineTo(-.34,.05);
+  shape.closePath();
+  const geo=new THREE.ExtrudeGeometry(shape,{
+    depth:.10,steps:1,bevelEnabled:true,bevelThickness:.035,
+    bevelSize:.065,bevelSegments:1
+  });
+  geo.rotateX(-Math.PI/2);
+  const fill=new THREE.MeshBasicMaterial({
+    color:'#ffdc8c',transparent:true,opacity:.53,depthTest:false,
+    depthWrite:false,side:THREE.DoubleSide
+  });
+  const edge=new THREE.LineBasicMaterial({
+    color:'#f6ffe9',transparent:true,opacity:.86,depthTest:false,depthWrite:false
+  });
+  const group=new THREE.Group();
+  const arrow=new THREE.Mesh(geo,fill);
+  arrow.renderOrder=18;
+  const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geo,30),edge);
+  outline.renderOrder=19;
+  group.add(arrow,outline);
+  group.userData.fill=fill;group.userData.edge=edge;
+  group.name='floating-car-navigation-arrow';
+  group.visible=false;
+  return group;
+}
+
 export class Navigator{
  constructor(scene){
   this.scene=scene;this.group=new THREE.Group();scene.add(this.group);
@@ -32,16 +68,20 @@ export class Navigator{
   const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.65,.95,8,6,1,true),new THREE.MeshBasicMaterial({color:0xffcc68,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide}));
   pillar.position.y=4;this.beacon.add(pillar);
   this.beacon.visible=false;this.group.visible=false;
+  this.hoverArrow=createHoverArrow();scene.add(this.hoverArrow);
  }
  setRoadGuides(enabled){
    this.guidesEnabled=Boolean(enabled);
-   this.group.visible=this.guidesEnabled&&this.guideMesh.count>0;
-   if(this.guidesEnabled)this.lastGuidePosition=null;
+   // Do NOT re-enable the old painted road markers.
+   this.group.visible=false;
+   this.guideMesh.count=0;
+   this.hoverArrow.visible=this.guidesEnabled&&Boolean(this.direction)&&this.direction.direction!=='ARRIVED';
  }
  update(player,target,time){
   if(!target){
     this.direction=null;this.beacon.visible=false;
     this.group.visible=false;this.guideMesh.count=0;
+    this.hoverArrow.visible=false;
     return null;
   }
   this.beacon.visible=true;
@@ -58,11 +98,19 @@ export class Navigator{
   this.beacon.children[0].material.color.set(color);
   this.beacon.children[1].material.color.set(color);
   this.direction=getNextTurn(position,this.route,player.yaw);
-  if(this.guidesEnabled && (!this.lastGuidePosition||distance(position,this.lastGuidePosition)>5)){
-    this.refreshGuides(position);
-    this.lastGuidePosition=[...position];
-  }
-  this.group.visible=this.guidesEnabled&&this.guideMesh.count>0;
+  // Place the arrow above the vehicle roof, not on the road.
+  // Its facing follows the NEXT waypoint instead of just pointing at the airport.
+  const next=this.direction?.next||dest;
+  const dx=next[0]-p[0],dz=next[1]-p[2];
+  const heading=Math.hypot(dx,dz)>1
+    ?Math.atan2(-dx,-dz):player.yaw;
+  this.hoverArrow.position.set(p[0],p[1]+3.75+Math.sin(time*2.6)*.16,p[2]);
+  this.hoverArrow.rotation.set(0,heading,0);
+  const accent=target.kind==='dropoff'?'#77f3e1':'#ffdd92';
+  this.hoverArrow.userData.fill.color.set(accent);
+  this.hoverArrow.visible=this.guidesEnabled&&this.direction?.direction!=='ARRIVED';
+  this.guideMesh.count=0;
+  this.group.visible=false;
   return this.direction;
  }
  rebuild(){

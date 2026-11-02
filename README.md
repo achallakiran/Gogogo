@@ -1,3 +1,14 @@
+## v0.5.1 navigation correction
+
+- The former road-level arrows and breadcrumb rectangles are no longer drawn.
+- A genuinely translucent, animated 3D navigation arrow floats above the **player's car**, tracks the route's next waypoint, and changes color from warm gold (passenger pickup) to teal (airport drop-off).
+- Settings > Floating Navigation Arrow switches it on/off; it is also hidden at the title screen or when navigation has no destination.
+- Browser smoke tests verify arrow height above the car, transparency, positioning, toggle behavior, and absence of road markers.
+
+Note: this patch corrects the missing arrow. The broader vehicle physics and terrain art overhaul remains separate work; do not represent this correction as having rebuilt the driving physics or the world.
+
+---
+
 Garage showroom now uses one reusable Three.js renderer with the game's actual voxel vehicle meshes and rotating model previews of all five owned/purchasable cars. Preview navigation and paint changes update the real 3D asset.
 
 ## v0.5 Driving and passenger satisfaction

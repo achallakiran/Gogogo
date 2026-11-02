@@ -293,6 +293,7 @@ class Game{
     }else if(title){
       this.environment?.airportAtmosphere?.update(this.t);
       this.navigation.group.visible=false;this.navigation.beacon.visible=false;
+      this.navigation.hoverArrow.visible=false;
       // Title is a stable, lightly animated postcard: no expensive physics/AI.
       this.accumulator=0;
       const t=this.t*.08;
