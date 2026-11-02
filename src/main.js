@@ -282,6 +282,7 @@ class Game{
         this.accumulator-=step;substeps++;
       }
       this.player.sync(dt,Math.min(1,this.accumulator/step));
+      this.sounds.updateEngine(this.player.horizontalSpeed,this.player.throttle,true);
       this.missions.update(this.t,this.player,dt);
       this.environment?.streetLife?.update(this.player,dt,this.t);
       this.environment?.airportAtmosphere?.update(this.t);
@@ -291,6 +292,7 @@ class Game{
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
       this.keepCarOnGround();
     }else if(title){
+      this.sounds.updateEngine(0,0,false);
       this.environment?.airportAtmosphere?.update(this.t);
       this.navigation.group.visible=false;this.navigation.beacon.visible=false;
       this.navigation.hoverArrow.visible=false;
@@ -300,7 +302,7 @@ class Game{
       this.camera.position.set(10+Math.sin(t)*2.2,15.5+Math.sin(t*.35)*.55,25+Math.cos(t)*2.0);
       this.camera.lookAt(3,4,-72);
       if(this.camera.fov!==53){this.camera.fov=53;this.camera.updateProjectionMatrix();}
-    }else{this.accumulator=0;}
+    }else{this.accumulator=0;this.sounds.updateEngine(0,0,false);}
     this.renderer.render(this.scene,this.camera);
   }
 }

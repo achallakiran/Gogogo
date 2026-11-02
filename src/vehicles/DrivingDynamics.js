@@ -10,7 +10,7 @@ export function longitudinalAcceleration({gas,brake},speed,spec){
     if(speed < -.8)return spec.brake*1.5; // braking while changing direction
     if(speed>=spec.topSpeed)return 0;
     const ratio=Math.max(0,1-Math.max(0,speed)/spec.topSpeed);
-    return spec.accel*(.27+.73*ratio)*1.20; // responsive, but not an instant 5g launch
+    return spec.accel*(.32+.68*ratio)*1.28; // lively low-end torque with real rolling resistance
   }
   return -speed*.85; // coasting, no forced braking
 }

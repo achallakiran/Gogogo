@@ -31,3 +31,12 @@ test('damage and repair cost scale by impact, condition and car',()=>{
   assert.ok(safeRepairCost(55,v)>0);
  }
 });
+
+test('all five vehicle classes have distinct acceleration and steering',async()=>{
+ const {longitudinalAcceleration}=await import('../src/vehicles/DrivingDynamics.js');
+ const {steeringYawRate}=await import('../src/vehicles/Steering.js');
+ const names=VEHICLES.map(v=>v.id);
+ assert.equal(new Set(names).size,5);
+ assert.ok(new Set(VEHICLES.map(v=>longitudinalAcceleration({gas:true},4,v).toFixed(2))).size>=4);
+ assert.ok(new Set(VEHICLES.map(v=>steeringYawRate(.8,1,v.handling,12).toFixed(2))).size>=4);
+});
