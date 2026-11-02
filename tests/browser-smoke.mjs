@@ -207,6 +207,16 @@ try {
   assert.ok(guideState.enabled&&guideState.visible&&guideState.relativeHeight>2.2&&guideState.relativeHeight<5.5,
     'Floating navigation arrow must sit above the car: '+JSON.stringify(guideState));
   assert.ok(guideState.fillOpacity>0&&guideState.fillOpacity<1,'Arrow must be translucent');
+  // The tip is explicitly in local -Z and must follow the route forward.
+  const orientation=await page.evaluate(()=>{
+    const g=window.__GOGOGO_DEBUG__,a=g.navigation.hoverArrow;
+    const f=new g.player.model.root.position.constructor(0,0,-1).applyQuaternion(a.quaternion);
+    const goal=g.navigation.route[1];
+    const p=g.player.model.root.position;
+    const dx=goal[0]-p.x,dz=goal[1]-p.z;
+    return {dot:f.x*dx+f.z*dz,forward:[f.x,f.z],goal};
+  });
+  assert.ok(orientation.dot>0,'Navigation arrow must face the upcoming route, not backwards: '+JSON.stringify(orientation));
   assert.equal(guideState.oldRoadGuides,false,'Old road marker visuals must be removed');
   assert.equal(guideState.groundMarkers,0,'No breadcrumb instances should be drawn on the road');
   await page.evaluate(()=>window.__GOGOGO_DEBUG__.changeSetting('roadGuides',false));

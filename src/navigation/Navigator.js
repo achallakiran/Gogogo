@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {planRoadRoute,getNextTurn,distance} from './Route.js';
 import {terrainHeight} from '../world/World.js';
 import {MOUNTAIN_SAMPLES} from '../world/MountainData.js';
+import {routeLookahead,angleToWaypoint,smoothGuideAngle} from './Guidance.js';
 
 // Subtle, floating breadcrumb pads replace duplicated road-painted chevrons.
 // Existing minimap and turn arrow remain available when guides are disabled.
@@ -16,40 +17,34 @@ const Y_AXIS=new THREE.Vector3(0,1,0);
 const baseRotation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);
 const dummy=new THREE.Object3D();
 
-// World-space translucent navigator: a single arrow FLOATING OVER THE CAR.
-// The local +Y axis of the 2D shape becomes world -Z after rotation.
+// Arrow shape is directly constructed in the XZ plane. Its TIP has local Z < 0,
+// the same direction as vehicle forward, so geometry cannot be reversed.
 function createHoverArrow(){
-  const shape=new THREE.Shape();
-  shape.moveTo(-.34,-1.25);
-  shape.lineTo(.34,-1.25);
-  shape.lineTo(.34,.05);
-  shape.lineTo(.93,.05);
-  shape.lineTo(0,1.52);
-  shape.lineTo(-.93,.05);
-  shape.lineTo(-.34,.05);
-  shape.closePath();
-  const geo=new THREE.ExtrudeGeometry(shape,{
-    depth:.10,steps:1,bevelEnabled:true,bevelThickness:.035,
-    bevelSize:.065,bevelSegments:1
-  });
-  geo.rotateX(-Math.PI/2);
-  const fill=new THREE.MeshBasicMaterial({
-    color:'#ffdc8c',transparent:true,opacity:.53,depthTest:false,
-    depthWrite:false,side:THREE.DoubleSide
-  });
-  const edge=new THREE.LineBasicMaterial({
-    color:'#f6ffe9',transparent:true,opacity:.86,depthTest:false,depthWrite:false
-  });
-  const group=new THREE.Group();
-  const arrow=new THREE.Mesh(geo,fill);
-  arrow.renderOrder=18;
-  const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geo,30),edge);
-  outline.renderOrder=19;
-  group.add(arrow,outline);
-  group.userData.fill=fill;group.userData.edge=edge;
-  group.name='floating-car-navigation-arrow';
-  group.visible=false;
-  return group;
+ const shape=new THREE.BufferGeometry();
+ const polygon=[[0,-1.8],[-.94,-.18],[-.32,-.18],[-.32,1.12],[.32,1.12],[.32,-.18],[.94,-.18]];
+ const triangles=[0,1,2,0,2,5,0,5,6,2,3,4,2,4,5];
+ const points=[];
+ for(const i of triangles){const [x,z]=polygon[i];points.push(x,0,z);}
+ shape.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+ shape.computeVertexNormals();
+ const fill=new THREE.MeshBasicMaterial({color:'#ffdc8c',transparent:true,opacity:.60,
+  depthTest:false,depthWrite:false,side:THREE.DoubleSide});
+ const edge=new THREE.LineBasicMaterial({color:'#f6ffe9',transparent:true,opacity:.85,
+  depthTest:false,depthWrite:false});
+ const outlinePoints=[];
+ for(let i=0;i<polygon.length;i++){
+  const a=polygon[i],b=polygon[(i+1)%polygon.length];
+  outlinePoints.push(a[0],.02,a[1],b[0],.02,b[1]);
+ }
+ const outlineGeo=new THREE.BufferGeometry();
+ outlineGeo.setAttribute('position',new THREE.Float32BufferAttribute(outlinePoints,3));
+ const group=new THREE.Group(),arrow=new THREE.Mesh(shape,fill);
+ arrow.renderOrder=18;
+ const outline=new THREE.LineSegments(outlineGeo,edge);outline.renderOrder=19;
+ group.add(arrow,outline);
+ group.userData.fill=fill;group.userData.edge=edge;group.userData.tipLocal=[0,0,-1.8];
+ group.name='floating-car-navigation-arrow';group.visible=false;
+ return group;
 }
 
 export class Navigator{
@@ -69,6 +64,7 @@ export class Navigator{
   pillar.position.y=4;this.beacon.add(pillar);
   this.beacon.visible=false;this.group.visible=false;
   this.hoverArrow=createHoverArrow();scene.add(this.hoverArrow);
+  this.smoothedHeading=NaN;
  }
  setRoadGuides(enabled){
    this.guidesEnabled=Boolean(enabled);
@@ -77,9 +73,9 @@ export class Navigator{
    this.guideMesh.count=0;
    this.hoverArrow.visible=this.guidesEnabled&&Boolean(this.direction)&&this.direction.direction!=='ARRIVED';
  }
- update(player,target,time){
+ update(player,target,time,dt=1/60){
   if(!target){
-    this.direction=null;this.beacon.visible=false;
+    this.direction=null;this.smoothedHeading=NaN;this.beacon.visible=false;
     this.group.visible=false;this.guideMesh.count=0;
     this.hoverArrow.visible=false;
     return null;
@@ -87,7 +83,7 @@ export class Navigator{
   this.beacon.visible=true;
   const p=player.model.root.position,position=[p.x,p.z],dest=target.pos;
   const id=target.kind+':'+dest.join(',');
-  if(id!==this.targetId||!this.lastPosition||distance(position,this.lastPosition)>30){
+  if(id!==this.targetId||!this.route.length){
     this.targetId=id;this.lastPosition=[...position];
     this.route=planRoadRoute(position,dest);
     this.rebuild();
@@ -100,12 +96,12 @@ export class Navigator{
   this.direction=getNextTurn(position,this.route,player.yaw);
   // Place the arrow above the vehicle roof, not on the road.
   // Its facing follows the NEXT waypoint instead of just pointing at the airport.
-  const next=this.direction?.next||dest;
-  const dx=next[0]-p.x,dz=next[1]-p.z;
-  const heading=Math.hypot(dx,dz)>1
-    ?Math.atan2(-dx,-dz):player.yaw;
+  const next=routeLookahead(this.route,position,24)||dest;
+  const heading=angleToWaypoint(position,next);
+  // Shortest angular arc with rate limit: no snapping at intersections.
+  this.smoothedHeading=smoothGuideAngle(this.smoothedHeading,heading,dt);
   this.hoverArrow.position.set(p.x,p.y+3.75+Math.sin(time*2.6)*.16,p.z);
-  this.hoverArrow.rotation.set(0,heading,0);
+  this.hoverArrow.rotation.set(0,this.smoothedHeading,0);
   const accent=target.kind==='dropoff'?'#77f3e1':'#ffdd92';
   this.hoverArrow.userData.fill.color.set(accent);
   this.hoverArrow.visible=this.guidesEnabled&&this.direction?.direction!=='ARRIVED';

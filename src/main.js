@@ -285,7 +285,7 @@ class Game{
       this.missions.update(this.t,this.player,dt);
       this.environment?.streetLife?.update(this.player,dt,this.t);
       this.environment?.airportAtmosphere?.update(this.t);
-      this.navigation.update(this.player,this.missions.target(this.player.position,this.player.spec.capacity),this.t);
+      this.navigation.update(this.player,this.missions.target(this.player.position,this.player.spec.capacity),this.t,dt);
       this.cameraMode.update(this.player,dt);
       if(!this._lastHUD||this.t-this._lastHUD>.1){this.ui.updateHUD();this._lastHUD=this.t;}
       if(this.t-this.lastSave>4){this.persist();this.lastSave=this.t;}
