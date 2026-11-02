@@ -20,6 +20,7 @@ import {populateRoadsideBoundaries} from './RoadsideBoundaries.js';
 import {populateSettlements} from './Settlements.js';
 import {populateAirportAtmosphere} from './AirportAtmosphere.js';
 import {populateTrailPlaygrounds} from './TrailPlaygrounds.js';
+import {populateDowntownDressing} from './DowntownDressing.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -251,10 +252,10 @@ function details(scene){
 export function createWorld(scene,physics){
   const skyCanvas=document.createElement('canvas');skyCanvas.width=4;skyCanvas.height=256;
   const sc=skyCanvas.getContext('2d'),sky=sc.createLinearGradient(0,0,0,256);
-  sky.addColorStop(0,'#70b7cc');sky.addColorStop(.45,'#a6d4d0');sky.addColorStop(.8,'#f3cc9b');sky.addColorStop(1,'#f5d8b5');
+  sky.addColorStop(0,'#479dce');sky.addColorStop(.45,'#a9e5eb');sky.addColorStop(.8,'#f2d49d');sky.addColorStop(1,'#f8dfb5');
   sc.fillStyle=sky;sc.fillRect(0,0,4,256);
-  scene.background=new THREE.CanvasTexture(skyCanvas);scene.fog=new THREE.FogExp2('#e9c9a7',.0012);
-  const hemi=new THREE.HemisphereLight('#d8f2ff','#739a78',1.25);scene.add(hemi);
+  scene.background=new THREE.CanvasTexture(skyCanvas);scene.fog=new THREE.FogExp2('#c6dfe2',.00090);
+  const hemi=new THREE.HemisphereLight('#e7f9ff','#8aaa88',1.45);scene.add(hemi);
   const sun=new THREE.DirectionalLight('#ffecc3',1.6);sun.position.set(-75,150,60);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
   sun.shadow.camera.left=-210;sun.shadow.camera.right=210;sun.shadow.camera.top=210;sun.shadow.camera.bottom=-210;sun.shadow.camera.far=410;
   sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);
@@ -263,6 +264,7 @@ export function createWorld(scene,physics){
   const occluders=buildings(scene,physics);
   airport(scene,physics);details(scene);
   const streetLife=populateStreetLife(scene,terrainHeight);
+  const downtownDressing=populateDowntownDressing(scene,physics,RAPIER);
   const landmarkCount=populateLandmarks(scene,terrainHeight);
   const landmarkColliders=attachLandmarkColliders(physics,RAPIER,terrainHeight);
   const mountain=populateMountainDistrict(scene,physics);
@@ -276,6 +278,6 @@ export function createWorld(scene,physics){
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const airportAtmosphere=populateAirportAtmosphere(scene);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,trailPlaygrounds,roadsideBoundaries,settlements,biomes,airportAtmosphere,terrainPatch,
+  return {sun,hemi,occluders,batches,streetLife,downtownDressing,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,trailPlaygrounds,roadsideBoundaries,settlements,biomes,airportAtmosphere,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

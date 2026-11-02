@@ -1,3 +1,12 @@
+## v0.6 starting city atmosphere
+
+- Sunrise Boulevard is visibly dressed from the very first driving frame with bright street trees, planters, flower beds, market canopies, hanging festival pennants, transit shelters and two overhead destination signs.
+- The street props are implemented as actual Three.js geometry, with collision on prominent roadside poles.
+- Sky and ambient light have been made clearer and more colorful, and the fog adjusted to expose the scene.
+- All landmark/save coordinates and city road lanes remain unchanged. All assets are bundled for offline play.
+
+---
+
 ## v0.5.2 visible-driving pass
 
 - The floating navigation arrow tracks the rendered car instead of an asynchronous physics frame.
