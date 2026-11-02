@@ -27,7 +27,15 @@ export function terrainHeight(x,z){
     .55*Math.sin(x*.115-z*.086)+
     .35*Math.sin(x*.185+z*.14)
   );
-  const cityGround=(hills+dips+bump+ridges)*(1-airportZone);
+  // Physical sculpted off-road banks at five city exits. The same height
+  // samples determine terrain geometry AND Rapier collision.
+  const trailZones=[[-311,74,3.5],[-310,-161,-2.1],[300,174,4.6],[127,-314,4.1],[-91,312,3.8]];
+  let trailHills=0;
+  for(const [cx,cz,height] of trailZones){
+    const dist=Math.hypot(x-cx,z-cz);
+    trailHills+=(1-S.smoothstep(dist,10,53))*height*(.72+.28*Math.sin((x-cx)*.16+(z-cz)*.10));
+  }
+  const cityGround=(hills+dips+bump+ridges+trailHills)*(1-airportZone);
   // Only sculpt the far northern ridge. The central city and its existing
   // landmark/save coordinates remain unchanged.
   if(z<263||z>500||x<42||x>287)return cityGround;

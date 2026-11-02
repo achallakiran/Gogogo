@@ -85,7 +85,7 @@ export class Navigator{
     return null;
   }
   this.beacon.visible=true;
-  const p=player.position,position=[p[0],p[2]],dest=target.pos;
+  const p=player.model.root.position,position=[p.x,p.z],dest=target.pos;
   const id=target.kind+':'+dest.join(',');
   if(id!==this.targetId||!this.lastPosition||distance(position,this.lastPosition)>30){
     this.targetId=id;this.lastPosition=[...position];
@@ -101,10 +101,10 @@ export class Navigator{
   // Place the arrow above the vehicle roof, not on the road.
   // Its facing follows the NEXT waypoint instead of just pointing at the airport.
   const next=this.direction?.next||dest;
-  const dx=next[0]-p[0],dz=next[1]-p[2];
+  const dx=next[0]-p.x,dz=next[1]-p.z;
   const heading=Math.hypot(dx,dz)>1
     ?Math.atan2(-dx,-dz):player.yaw;
-  this.hoverArrow.position.set(p[0],p[1]+3.75+Math.sin(time*2.6)*.16,p[2]);
+  this.hoverArrow.position.set(p.x,p.y+3.75+Math.sin(time*2.6)*.16,p.z);
   this.hoverArrow.rotation.set(0,heading,0);
   const accent=target.kind==='dropoff'?'#77f3e1':'#ffdd92';
   this.hoverArrow.userData.fill.color.set(accent);

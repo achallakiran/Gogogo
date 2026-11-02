@@ -27,6 +27,12 @@ export class Vehicle{
     for(const side of [-1,1])for(const axle of [-1,1]){
       world.createCollider(RAPIER.ColliderDesc.ball(spec.wheel*.86).setTranslation(side*(spec.width*.5-.06),-.5,axle*(spec.length*.5-spec.wheel*.85)).setFriction(1.75).setRestitution(.04).setDensity(.25),this.body);
     }
+    // Contact shadows are visible even without expensive realtime mobile shadows.
+    this.contactShadows=this.model.wheels.map(()=>{
+      const shadow=new THREE.Mesh(new THREE.CircleGeometry(Math.max(.42,spec.wheel*.9),16),
+        new THREE.MeshBasicMaterial({color:'#101722',transparent:true,opacity:.27,depthWrite:false,side:THREE.DoubleSide}));
+      shadow.rotation.x=-Math.PI/2;shadow.renderOrder=2;scene.add(shadow);return shadow;
+    });
     this.posePrev=null;this.poseCurr=null;this.capturePhysicsPose(true);this.sync(0,1);
   }
   capturePhysicsPose(reset=false){
@@ -136,10 +142,10 @@ export class Vehicle{
     const p=this.model.root.position;
     const visualLean=clamp(-this.steer*this.speed*.010,-.20,.20);
     this.model.chassis.rotation.z=THREE.MathUtils.damp(this.model.chassis.rotation.z,visualLean,5,Math.max(dt,.016));
-    this.model.chassis.rotation.x=THREE.MathUtils.damp(this.model.chassis.rotation.x,clamp(-this.speed*.0014,-.06,.06),3,Math.max(dt,.016));
+    this.model.chassis.rotation.x=THREE.MathUtils.damp(this.model.chassis.rotation.x,clamp((this.throttle*.095)-(this.braking?.13:0)-this.speed*.0004,-.14,.13),4.5,Math.max(dt,.016));
     // A wheel's world position depends on vehicle heading. Sample actual
     // physics contact (including repaired asphalt), not unrotated terrain.
-    for(const w of this.model.wheels){
+    for(const [wheelIndex,w] of this.model.wheels.entries()){
       w.holder.rotation.y=w.axle<0?this.steer*.38:0;
       const local=new THREE.Vector3(
         w.side*(this.spec.width*.5-.06),0,
@@ -157,6 +163,13 @@ export class Vehicle{
         w.baseY+desired,11,Math.max(dt,.016));
       w.travel=w.holder.position.y-w.baseY;
       w.contactY=floor;
+      const shadow=this.contactShadows?.[wheelIndex];
+      if(shadow){
+        shadow.position.set(wx,floor+.16,wz);
+        const gap=Math.max(0,p.y+w.baseY-floor-this.spec.wheel*.86);
+        shadow.material.opacity=THREE.MathUtils.clamp(.29-gap*.12,.06,.29);
+        shadow.scale.setScalar(1+gap*.3);
+      }
       w.spin.rotation.x+=this.speed*Math.max(dt,.016)/this.spec.wheel;
     }
   }
@@ -168,5 +181,5 @@ export class Vehicle{
     this.capturePhysicsPose(true);this.sync(.016,1);
   }
   setColor(hex){this.color=hex;this.model.paint.color.set(hex);}
-  dispose(){this.scene.remove(this.model.root);this.model.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});this.world.removeRigidBody(this.body);}
+  dispose(){this.scene.remove(this.model.root);this.model.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});for(const shadow of this.contactShadows||[]){this.scene.remove(shadow);shadow.geometry.dispose();shadow.material.dispose();}this.world.removeRigidBody(this.body);}
 }

@@ -1,3 +1,13 @@
+## v0.5.2 visible-driving pass
+
+- The floating navigation arrow tracks the rendered car instead of an asynchronous physics frame.
+- Four physical-ground-contact shadows per car make the tires visually anchored on mobile.
+- Speed-sensitive chase camera FOV and acceleration/brake body pitch communicate vehicle motion.
+- Five physical rough-terrain banks near city exits and new instanced rocks, shrubs, stumps and fallen logs, with collision on boulders/logs.
+- This improves appearance and handling but does not yet replace the four sphere-wheel colliders with a fully independent sprung-axle model.
+
+---
+
 ## v0.5.1 navigation correction
 
 - The former road-level arrows and breadcrumb rectangles are no longer drawn.

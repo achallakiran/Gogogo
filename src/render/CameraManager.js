@@ -33,7 +33,9 @@ export class CameraManager{
       this.smoothedTarget.lerp(look,1-Math.exp(-dt*6));
     }
     this.camera.lookAt(this.smoothedTarget);
-    const targetFov=['hood','cockpit'].includes(this.mode)?76:64;
-    if(Math.abs(this.camera.fov-targetFov)>.01){this.camera.fov=targetFov;this.camera.updateProjectionMatrix();}
+    const speed=Math.min(60,vehicle.horizontalSpeed||0);
+    const targetFov=(['hood','cockpit'].includes(this.mode)?76:64)+(this.mode==='orbit'?0:Math.min(10,speed*.19));
+    const nextFov=THREE.MathUtils.damp(this.camera.fov,targetFov,3.5,Math.max(dt,.016));
+    if(Math.abs(this.camera.fov-nextFov)>.005){this.camera.fov=nextFov;this.camera.updateProjectionMatrix();}
   }
 }

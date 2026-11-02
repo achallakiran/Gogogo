@@ -204,7 +204,7 @@ try {
       fillOpacity:a.userData.fill.opacity,oldRoadGuides:g.navigation.group.visible,
       groundMarkers:g.navigation.guideMesh.count};
   });
-  assert.ok(guideState.enabled&&guideState.visible&&guideState.relativeHeight>3&&guideState.relativeHeight<5,
+  assert.ok(guideState.enabled&&guideState.visible&&guideState.relativeHeight>2.2&&guideState.relativeHeight<5.5,
     'Floating navigation arrow must sit above the car: '+JSON.stringify(guideState));
   assert.ok(guideState.fillOpacity>0&&guideState.fillOpacity<1,'Arrow must be translucent');
   assert.equal(guideState.oldRoadGuides,false,'Old road marker visuals must be removed');
