@@ -21,6 +21,7 @@ import {populateSettlements} from './Settlements.js';
 import {populateAirportAtmosphere} from './AirportAtmosphere.js';
 import {populateTrailPlaygrounds} from './TrailPlaygrounds.js';
 import {populateDowntownDressing} from './DowntownDressing.js';
+import {populateUrbanRoadWear} from './UrbanRoadWear.js';
 export {terrainHeight} from './SurfaceSystem.js';
 
 const materialCache=new Map();
@@ -269,6 +270,7 @@ export function createWorld(scene,physics){
   const landmarkColliders=attachLandmarkColliders(physics,RAPIER,terrainHeight);
   const mountain=populateMountainDistrict(scene,physics);
   const roadDamage=populateRoadDamage(scene,physics,RAPIER);
+  const urbanRoadWear=populateUrbanRoadWear(scene,physics,RAPIER);
   const regionalRoads=populateRegionalRoads(scene,physics,RAPIER);
   const coastalRoad=populateCoastalRoad(scene,physics,RAPIER);
   const worldDensity=populateWorldDensity(scene,physics,RAPIER);
@@ -278,6 +280,6 @@ export function createWorld(scene,physics){
   const biomes=populateBiomeScenery(scene,physics,RAPIER);
   const airportAtmosphere=populateAirportAtmosphere(scene);
   const batches=batchStaticScenery(scene,occluders);
-  return {sun,hemi,occluders,batches,streetLife,downtownDressing,landmarkCount,landmarkColliders,mountain,roadDamage,regionalRoads,coastalRoad,worldDensity,trailPlaygrounds,roadsideBoundaries,settlements,biomes,airportAtmosphere,terrainPatch,
+  return {sun,hemi,occluders,batches,streetLife,downtownDressing,landmarkCount,landmarkColliders,mountain,roadDamage,urbanRoadWear,regionalRoads,coastalRoad,worldDensity,trailPlaygrounds,roadsideBoundaries,settlements,biomes,airportAtmosphere,terrainPatch,
     worldManifestVersion:1,permanentLandmarkIds:FIXED_LANDMARKS.map(x=>x.id)};
 }

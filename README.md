@@ -1,3 +1,12 @@
+## v0.6 tactile urban asphalt
+
+- Seven distinct, real triangle-mesh-backed damaged-asphalt zones are placed across the playable city, including along the starting boulevard. Each has raised chipped edges, an irregular depressed center and variations in vertex color.
+- Small rocks and gravel occupy the road shoulders without blocking the central lanes.
+- The original terrain remains as a safety floor. Additional Rapier colliders provide physical resistance to the tire spheres.
+- Browser tests now verify that the new road-wear system appears in the actual running world.
+
+---
+
 ## v0.6 driving effects
 
 - Surface-aware tire dust is emitted behind the rear wheels when driving off-road or sliding through a turn. A single 140-point GPU buffer keeps the effect practical on mobile.
