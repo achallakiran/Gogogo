@@ -30,6 +30,9 @@ try {
   await page.locator('#hud').waitFor({timeout:10000});
   await page.waitForTimeout(800);
   assert.ok(await page.locator('#game canvas').count()>0,'Expected rendered canvas');
+  const visualEffects=await page.evaluate(()=>({name:window.__GOGOGO_DEBUG__?.drivingFX?.points?.name,count:window.__GOGOGO_DEBUG__?.environment?.downtownDressing?.canopyCount,stalls:window.__GOGOGO_DEBUG__?.environment?.downtownDressing?.stallCount,signs:window.__GOGOGO_DEBUG__?.environment?.downtownDressing?.signCount}));
+  assert.equal(visualEffects.name,'driving-tire-dust');
+  assert.ok(visualEffects.count>=10&&visualEffects.stalls>=10&&visualEffects.signs>=2,'Starting district should contain real new street scenery: '+JSON.stringify(visualEffects));
   const worldFoundation=await page.evaluate(()=>{
     const e=window.__GOGOGO_DEBUG__?.environment;
     return e?{version:e.worldManifestVersion,ids:e.permanentLandmarkIds,

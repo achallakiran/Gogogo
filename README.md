@@ -1,3 +1,12 @@
+## v0.6 driving effects
+
+- Surface-aware tire dust is emitted behind the rear wheels when driving off-road or sliding through a turn. A single 140-point GPU buffer keeps the effect practical on mobile.
+- Chase camera now adds controlled lateral slip feedback.
+- Continuous synthesized engine tone varies with speed and throttle. No external audio assets, so it works offline.
+- Smoke tests assert that the real downtown scene and wheel effects are in the game runtime rather than just decorative planning notes.
+
+---
+
 ## v0.6 starting city atmosphere
 
 - Sunrise Boulevard is visibly dressed from the very first driving frame with bright street trees, planters, flower beds, market canopies, hanging festival pennants, transit shelters and two overhead destination signs.

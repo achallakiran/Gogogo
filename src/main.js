@@ -7,6 +7,7 @@ import {Vehicle} from './vehicles/Vehicle.js';
 import {Traffic} from './traffic/Traffic.js';
 import {Missions} from './missions/Missions.js';
 import {CameraManager} from './render/CameraManager.js';
+import {DrivingFX} from './render/DrivingFX.js';
 import {Navigator} from './navigation/Navigator.js';
 import {Input} from './core/Input.js';
 import {UI} from './ui/UI.js';
@@ -55,6 +56,7 @@ class Game{
       this.cameraMode=new CameraManager(this.camera);
       const environment=createWorld(this.scene,this.world);this.environment=environment;this.cameraMode.occluders=environment.occluders;
       this.missions=new Missions(this.scene);this.navigation=new Navigator(this.scene);this.traffic=new Traffic(this.scene,this.world);
+       this.drivingFX=new DrivingFX(this.scene);
       this.spawnPlayer([0,2,0],0);
       this.applySettings();this.resize();
       this.ui.toTitle();this.clock=new THREE.Clock();requestAnimationFrame(this.tick);
@@ -282,6 +284,7 @@ class Game{
         this.accumulator-=step;substeps++;
       }
       this.player.sync(dt,Math.min(1,this.accumulator/step));
+      this.drivingFX.update(this.player,dt,true);
       this.sounds.updateEngine(this.player.horizontalSpeed,this.player.throttle,true);
       this.missions.update(this.t,this.player,dt);
       this.environment?.streetLife?.update(this.player,dt,this.t);

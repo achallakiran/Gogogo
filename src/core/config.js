@@ -1,4 +1,4 @@
-export const VERSION = '0.6.0-beta.3';
+export const VERSION = '0.6.0-beta.4';
 export const STORAGE_KEY = 'voxel-city-driver:v1';
 export const COLORS = [
   {name:'Sunburst', hex:'#ffc34b'},

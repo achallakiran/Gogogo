@@ -22,6 +22,10 @@ export class CameraManager{
       const hits=this.ray.intersectObjects(this.occluders,false);
       if(hits.length)desired.copy(center).addScaledVector(diff,Math.max(2,hits[0].distance-.7));
     }
+    // A small delayed lateral camera drift gives the body a sense of mass.
+    const lateral=new THREE.Vector3(-forward.z,0,forward.x);
+    if(['chase','close'].includes(this.mode))desired.addScaledVector(lateral,
+      THREE.MathUtils.clamp((vehicle.lateralSlip||0)*Math.sign(vehicle.steer||0)*.075,-.9,.9));
     const look=target.clone();
     if(this.mode==='chase'||this.mode==='close')look.addScaledVector(forward,2.8);
     if(this.initial){
